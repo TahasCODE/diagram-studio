@@ -48,8 +48,10 @@ jobs:
           git diff --exit-code -- api/openapi.json
           npm run build
       - name: Java unit and PostgreSQL integration tests
-        working-directory: backend
-        run: bash mvnw -B --no-transfer-progress verify -Pintegration
+        run: |
+          node scripts/test-mailbox.mjs > mailbox.log 2>&1 &
+          cd backend
+          bash mvnw -B --no-transfer-progress verify -Pintegration
       - name: Start packaged application
         run: |
           java -jar backend/target/diagram-studio-1.0.0.jar > backend.log 2>&1 &

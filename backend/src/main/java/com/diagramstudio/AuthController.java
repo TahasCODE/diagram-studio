@@ -43,9 +43,12 @@ public class AuthController {
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwords;
     private final HttpSessionSecurityContextRepository contexts;
+    private final AccountCodes codes;
+    private final EmailVerification verification;
 
-    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts) {
+    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts, AccountCodes codes, EmailVerification verification) {
         this.jdbc = jdbc; this.passwords = passwords; this.contexts = contexts;
+        this.codes=codes; this.verification=verification;
     }
 
     @GetMapping("/me")
@@ -57,6 +60,7 @@ public class AuthController {
     }
 
     @PostMapping("/register") @ResponseStatus(HttpStatus.CREATED)
+    @org.springframework.transaction.annotation.Transactional
     Account register(@Valid @RequestBody Register form, HttpServletRequest request, HttpServletResponse response) {
         if (form.password().getBytes(StandardCharsets.UTF_8).length > 72)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at most 72 UTF-8 bytes.");
@@ -67,7 +71,24 @@ public class AuthController {
         } catch (DuplicateKeyException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with that email already exists.");
         }
+        codes.issue(account.id(),account.email(),"VERIFY_EMAIL");
         return account;
+    }
+
+    public record EmailRequest(@NotBlank @Email @Size(max=254) String email) {}
+    public record VerifyCode(@NotBlank @Email @Size(max=254) String email,
+                             @jakarta.validation.constraints.Pattern(regexp="[0-9]{6}") @NotBlank String code) {
+        @Override public String toString() {return "VerifyCode[credentials=REDACTED]";}
+    }
+    @PostMapping("/verify-email") @ResponseStatus(HttpStatus.NO_CONTENT)
+    void verifyEmail(@Valid @RequestBody VerifyCode form) {
+        if(!verification.verify(form.email().trim().toLowerCase(Locale.ROOT),form.code()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"The code is invalid or expired. Request a new code if needed.");
+    }
+    @PostMapping("/resend-verification")
+    Map<String,String> resend(@Valid @RequestBody EmailRequest form) {
+        verification.resend(form.email().trim().toLowerCase(Locale.ROOT));
+        return Map.of("message","If this account needs verification, a code has been sent. Check your inbox and spam folder.");
     }
 
     @PostMapping("/login")
@@ -82,6 +103,8 @@ public class AuthController {
         boolean matches = passwords.matches(form.password(), hash);
         if (credentials.isEmpty() || !matches) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
         Account account = credentials.getFirst().account();
+        if(!Boolean.TRUE.equals(jdbc.queryForObject("SELECT email_verified_at IS NOT NULL FROM app_users WHERE id=?",Boolean.class,account.id())))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Verify your email before signing in. Request a verification code to continue.");
         authenticate(account, request, response);
         return account;
     }

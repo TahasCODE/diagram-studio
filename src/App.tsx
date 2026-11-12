@@ -66,7 +66,8 @@ export default function App() {
   const [revisionLoading, setRevisionLoading] = useState(false);
   const [revisionError, setRevisionError] = useState('');
   const [revisionPreview, setRevisionPreview] = useState<Revision | null>(null);
-  const [authMode, setAuthMode] = useState<'login'|'register'>('login');
+  const [authMode, setAuthMode] = useState<'login'|'register'|'verify'>('login');
+  const [resendAt, setResendAt] = useState(0);
   const [authError, setAuthError] = useState('');
   const [authMessage, setAuthMessage] = useState('');
   const [authSuccess, setAuthSuccess] = useState<Account | null>(null);
@@ -168,11 +169,15 @@ export default function App() {
     const mode = authMode;
     try {
       await session();
+      if(mode==='verify') {
+        await request('/auth/verify-email','POST',{email:form.get('email'),code:form.get('code')});
+        formElement.reset(); setAuthMode('login'); setAuthMessage('Email verified successfully. Sign in to continue.'); return;
+      }
       const account = await request<Account>('/auth/'+mode,'POST',{email:form.get('email'),password:form.get('password'),...(mode==='register'?{name:form.get('name')}:{})});
       if (mode === 'register') {
         setAuthEmail(String(form.get('email') || ''));
-        formElement.reset(); setAuthMode('login');
-        setAuthMessage('Account created successfully. Sign in with your email and password to continue.');
+        formElement.reset(); setAuthMode('verify'); setResendAt(Date.now()+60000);
+        setAuthMessage('Account created successfully. Check your email for a six-digit verification code.');
         setApiOnline(true);
       } else {
         const confirmed = await session();
@@ -182,6 +187,11 @@ export default function App() {
         setNotice('Signed in successfully. Your private workspace is ready.');
       }
     } catch(error) { setAuthError(errorMessage(error)); } finally { setBusy(false); }
+  }
+  async function resendVerification() {
+    setBusy(true);setAuthError('');
+    try { await session();const result=await request<{message:string}>('/auth/resend-verification','POST',{email:authEmail});setAuthMessage(result.message);setResendAt(Date.now()+60000); }
+    catch(error){setAuthError(errorMessage(error));}finally{setBusy(false);}
   }
   async function saveOnline(copy = false): Promise<Draft | null> {
     if (!user) { openAuth(); return null; }
@@ -322,21 +332,23 @@ export default function App() {
     </WorkspaceShell>
 
     {modal === 'confirm' && confirmDetails && <Dialog title={confirmDetails.title} onClose={() => setModal(null)}><p className="dialog-copy">{confirmDetails.message}</p><div className="actions"><button className="primary" onClick={() => { setModal(null); confirmDetails.action(); }}>Continue</button><button onClick={() => setModal(null)}>Cancel</button></div></Dialog>}
-    {modal === 'auth' && <Dialog title={authSuccess?'You’re Signed In':authMode==='login'?'Sign In to Diagram Studio':'Create Your Account'} onClose={() => {if(!busy)setModal(null);}}>
+    {modal === 'auth' && <Dialog title={authSuccess?'You’re Signed In':authMode==='verify'?'Verify Your Email':authMode==='login'?'Sign In to Diagram Studio':'Create Your Account'} onClose={() => {if(!busy)setModal(null);}}>
       {authSuccess ? <div className="auth-success" role="status"><span className="auth-success-icon"><Icon name="check" size={28}/></span><h3>Welcome back, {authSuccess.name.split(' ')[0]}.</h3><p>You’re securely signed in as <strong>{authSuccess.email}</strong>. Your saved projects and version history are ready.</p><button className="primary" onClick={() => {setModal(null);setAuthSuccess(null);}}>Continue to Workspace<Icon name="right" size={16}/></button></div> : <>
-        <p className="dialog-copy">{authMode==='login'?'Sign in to save private projects, publish diagrams, and recover previous versions.':'Create an account, then sign in to your private workspace.'}</p>
+        <p className="dialog-copy">{authMode==='verify'?'Enter the code from your inbox. It expires in 10 minutes. Check spam if it has not arrived.':authMode==='login'?'Sign in to save private projects, publish diagrams, and recover previous versions.':'Create an account and verify your email to secure your private workspace.'}</p>
         {authMessage && <div className="auth-created" role="status"><Icon name="check" size={18}/><p>{authMessage}</p></div>}
         <form onSubmit={authenticate} aria-busy={busy}>
           <fieldset disabled={busy}>
             {authMode==='register' && <><label htmlFor="account-name">Your Name</label><input id="account-name" name="name" autoComplete="name" maxLength={80} required/></>}
             <label htmlFor="email">Email Address</label><input id="email" name="email" type="email" autoComplete="username" maxLength={254} value={authEmail} onChange={e => setAuthEmail(e.target.value)} required/>
-            <label htmlFor="password">Password</label><input key={authMode} id="password" name="password" type="password" autoComplete={authMode==='login'?'current-password':'new-password'} minLength={authMode==='register'?10:undefined} maxLength={72} required/>
+            {authMode==='verify'?<><label htmlFor="verification-code">Verification Code</label><input id="verification-code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} placeholder="000000" required/></>:<><label htmlFor="password">Password</label><input key={authMode} id="password" name="password" type="password" autoComplete={authMode==='login'?'current-password':'new-password'} minLength={authMode==='register'?10:undefined} maxLength={72} required/></>}
             {authMode==='register' && <p className="hint">Use at least 10 characters (maximum 72 UTF-8 bytes).</p>}
             {authError && <p className="form-error" role="alert">{authError}</p>}
-            <button className="primary" disabled={busy} type="submit">{busy&&<span className="loading-spinner" aria-hidden="true"/>}{busy?(authMode==='login'?'Signing In…':'Creating Account…'):authMode==='login'?'Sign In':'Create Account'}</button>
+            <button className="primary" disabled={busy} type="submit">{busy&&<span className="loading-spinner" aria-hidden="true"/>}{busy?'Please Wait…':authMode==='verify'?'Verify Email':authMode==='login'?'Sign In':'Create Account'}</button>
           </fieldset>
           {busy && <p className="auth-progress" role="status">{authMode==='login'?'Verifying your credentials and establishing a secure session…':'Creating your account securely…'}</p>}
         </form>
+        {authMode==='verify'&&<button className="text-button" disabled={busy} onClick={() => {if(Date.now()<resendAt){setAuthMessage('Wait 60 seconds between code requests. Your latest code is still valid.');return;}void resendVerification();}}>Resend Verification Code</button>}
+        {authMode==='login'&&<button className="text-button" disabled={busy} onClick={()=>{setAuthMode('verify');setAuthMessage('Enter your email and request a code if you have not received one.');setAuthError('');}}>Need to Verify Your Email?</button>}
         <button className="text-button" disabled={busy} onClick={() => {setAuthMode(authMode==='login'?'register':'login');setAuthError('');setAuthMessage('');}}>{authMode==='login'?'New here? Create an Account':'Already registered? Sign In'}</button>
       </>}
     </Dialog>}

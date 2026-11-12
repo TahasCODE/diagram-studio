@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,properties={
     "spring.datasource.url=${STUDIO_TEST_DB_URL:jdbc:postgresql://localhost:55432/diagram_studio_test}",
-    "management.server.port=0","studio.auth-rate-limit.max-attempts=5",
+    "management.server.port=0","studio.auth-rate-limit.max-attempts=8",
     "studio.ops.username=test-operator","studio.ops.password=operator-test-only-123"
 })
 class BackendWorkflowIT {
@@ -53,6 +53,12 @@ class BackendWorkflowIT {
         var account=client.call("/api/auth/register","POST",Map.of("name","Java Integration","email",email,"password","IntegrationPassword123"),201);
         owner=UUID.fromString((String)account.get("id"));
         assertNull(client.call("/api/auth/me","GET",null,200).get("user"));
+        client.call("/api/auth/login","POST",Map.of("email",email,"password","IntegrationPassword123"),403);
+        var mail=client.http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:8025/messages?to="+URLEncoder.encode(email,java.nio.charset.StandardCharsets.UTF_8))).GET().build(),HttpResponse.BodyHandlers.ofString());
+        var messages=json.readValue(mail.body(),List.class);
+        String code=(String)((Map<?,?>)messages.getLast()).get("code");
+        client.call("/api/auth/verify-email","POST",Map.of("email",email,"code",code),204);
+        client.call("/api/auth/verify-email","POST",Map.of("email",email,"code",code),400);
         client.call("/api/auth/login","POST",Map.of("email",email,"password","IntegrationPassword123"),200);
         var document=Map.of("title","Concurrency 100%_proof","nodes",List.of(Map.of("id","a","label","Start","x",20,"y",50)),"scenarios",List.of(Map.of("name","Main","steps",List.of("a"))));
         var draft=client.call("/api/projects","POST",Map.of("document",document),201);

@@ -24,7 +24,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         this.limiter=new FixedWindowRateLimiter(attempts,window,10_000,Clock.systemUTC());this.meters=meters;
     }
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        if("POST".equals(request.getMethod()) && Set.of("/api/auth/login","/api/auth/register").contains(request.getRequestURI())) {
+        if("POST".equals(request.getMethod()) && request.getRequestURI().startsWith("/api/auth/") && !"/api/auth/logout".equals(request.getRequestURI())) {
             var decision=limiter.acquire(request.getRemoteAddr());
             if(!decision.allowed()) {
                 response.setHeader("Retry-After",Long.toString(decision.retryAfterSeconds()));

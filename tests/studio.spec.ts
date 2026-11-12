@@ -3,6 +3,11 @@ import type { Page } from '@playwright/test';
 import { examples } from '../src/lib/examples';
 async function signInAfterRegistration(page: Page,password: string) {
   await expect(page.getByText('Account created successfully.',{exact:false})).toBeVisible();
+  const email=await page.getByLabel('Email Address').inputValue();
+  const messages=await (await page.request.get('http://127.0.0.1:8025/messages?to='+encodeURIComponent(email))).json();
+  await page.getByLabel('Verification Code',{exact:true}).fill(messages.at(-1).code);
+  await page.getByRole('button',{name:'Verify Email',exact:true}).click();
+  await expect(page.getByText('Email verified successfully.',{exact:false})).toBeVisible();
   expect((await (await page.request.get('/api/auth/me')).json()).user).toBeNull();
   await page.getByLabel('Password',{exact:true}).fill('IncorrectPassword123');
   await page.getByRole('dialog').getByRole('button',{name:'Sign In',exact:true}).click();

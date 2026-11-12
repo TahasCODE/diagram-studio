@@ -6,7 +6,7 @@ const auth={cookieAuth:[]};
 const write={cookieAuth:[],csrfToken:[]};
 const idParameter={name:'id',in:'path',required:true,schema:{type:'string',format:'uuid'}};
 function operation(operationId,description,method,response,body,security=[],extra={}) {
-  return {operationId,description,security,...(body?{requestBody:{required:true,...json(body)}}:{}),responses:{[method==='post'&&operationId!=='login'&&operationId!=='logout'&&operationId!=='restoreRevision'?'201':method==='delete'||operationId==='logout'?'204':'200']:{description:'Successful response',...(response?json(response):{})},'400':error,'401':error,'403':error,...extra}};
+  return {operationId,description,security,...(body?{requestBody:{required:true,...json(body)}}:{}),responses:{[method==='post'&&['register','createProject','publishProject','remixPublication'].includes(operationId)?'201':method==='delete'||['logout','verifyEmail'].includes(operationId)?'204':'200']:{description:'Successful response',...(response?json(response):{})},'400':error,'401':error,'403':error,...extra}};
 }
 const optionalText=max=>({type:['string','null'],maxLength:max});
 const schemas={
@@ -31,7 +31,9 @@ schemas.ActivityPage=object({items:{type:'array',items:ref('AuditEvent')},page:{
 const paging=[{name:'page',in:'query',schema:{type:'integer',minimum:0,maximum:10000,default:0}},{name:'size',in:'query',schema:{type:'integer',minimum:1,maximum:50,default:12}}];
 const paths={
  '/auth/me':{get:operation('session','Returns the current account and a CSRF token. Creates an anonymous session when signed out.','get',ref('Session'))},
- '/auth/register':{post:operation('register','Creates an account without signing in. Submit credentials to /auth/login next.','post',ref('Account'),object({name:{type:'string',minLength:1,maxLength:80},email:{type:'string',format:'email',maxLength:254},password:{type:'string',minLength:10,maxLength:72}}),[write],{'409':error})},
+ '/auth/register':{post:operation('register','Creates an unverified account and sends an email code. SMTP failure rolls back registration.','post',ref('Account'),object({name:{type:'string',minLength:1,maxLength:80},email:{type:'string',format:'email',maxLength:254},password:{type:'string',minLength:10,maxLength:72}}),[write],{'409':error,'429':error,'503':error})},
+ '/auth/verify-email':{post:operation('verifyEmail','Consumes a six-digit code; expires in ten minutes or five attempts. Does not sign in.','post',null,object({email:{type:'string',format:'email',maxLength:254},code:{type:'string',pattern:'^[0-9]{6}$'}}),[write],{'429':error})},
+ '/auth/resend-verification':{post:operation('resendVerification','Generic acknowledgement; sends only to unverified accounts, at most once per minute. Replaces prior code.','post',object({message:{type:'string'}}),object({email:{type:'string',format:'email',maxLength:254}}),[write],{'429':error,'503':error})},
  '/auth/login':{post:operation('login','Signs in. Passwords are compared using bcrypt. Errors do not reveal which credential was wrong.','post',ref('Account'),object({email:{type:'string',format:'email'},password:{type:'string',maxLength:72}}),[write])},
  '/auth/logout':{post:operation('logout','Invalidates the current session. Fetch /auth/me again before the next write.','post',null,null,[write])},
  '/activity':{get:{...operation('listActivity','Returns owned audit events, including events for deleted projects. Document content and credentials are excluded.','get',ref('ActivityPage'),null,[auth]),parameters:[...paging,{name:'projectId',in:'query',schema:{type:'string',format:'uuid'}}]}},

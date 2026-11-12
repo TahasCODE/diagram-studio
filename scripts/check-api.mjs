@@ -19,6 +19,11 @@ function client() {
 }
 const author=client(), stranger=client(), anonymous=client();
 const unique=crypto.randomUUID();
+async function verifyEmail(client,email){
+  const mail=await (await fetch('http://127.0.0.1:8025/messages?to='+encodeURIComponent(email))).json();
+  assert.match(mail.at(-1)?.code||'',/^[0-9]{6}$/);checks++;
+  await client.send('/auth/verify-email','POST',{email,code:mail.at(-1).code},204);
+}
 const document={title:'Integration Refund',nodes:[{id:'request',label:'Request',x:20,y:50,notes:'A private draft note.'},{id:'refund',label:'Refund',x:80,y:50}],scenarios:[{name:'Approved',steps:['request','refund'],description:'Successful refund.',review:['Check payout']}]};
 await anonymous.send('/health');
 await anonymous.send('/projects','GET',undefined,401);
@@ -26,12 +31,15 @@ await author.send('/auth/me');
 await author.send('/auth/register','POST',{name:'Integration Author',email:`author-${unique}@example.test`,password:'IntegrationPassword123'},403,false);
 const account=await author.send('/auth/register','POST',{name:'Integration Author',email:`author-${unique}@example.test`,password:'IntegrationPassword123'},201);
 assert.equal((await author.send('/auth/me')).user,null);checks++;
+await author.send('/auth/login','POST',{email:`author-${unique}@example.test`,password:'IntegrationPassword123'},403);
+await verifyEmail(author,`author-${unique}@example.test`);
 await author.send('/auth/login','POST',{email:`author-${unique}@example.test`,password:'IntegrationPassword123'});
 assert.equal((await author.send('/auth/me')).user.id,account.id);checks++;
 let draft=await author.send('/projects','POST',{document},201);
 const projectId=draft.id;
 await stranger.send('/auth/me');
 await stranger.send('/auth/register','POST',{name:'Other Author',email:`other-${unique}@example.test`,password:'IntegrationPassword123'},201);
+await verifyEmail(stranger,`other-${unique}@example.test`);
 await stranger.send('/auth/login','POST',{email:`other-${unique}@example.test`,password:'IntegrationPassword123'});
 const page=await author.send('/projects?page=0&size=1&q=Integration');assert.equal(page.total,1);assert.equal(page.items[0].id,projectId);checks+=2;
 assert.equal((await author.send('/projects?page=1&size=1')).items.length,0);checks++;
