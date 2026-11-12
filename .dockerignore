@@ -1,0 +1,10 @@
+node_modules
+dist
+.runtime
+.tools
+.git
+.env
+legacy
+backend/target
+test-results
+playwright-report

@@ -1,0 +1,73 @@
+name: Verify Full Stack
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: diagram_studio
+          POSTGRES_USER: diagram
+          POSTGRES_PASSWORD: diagram_ci_only
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U diagram -d diagram_studio"
+          --health-interval 5s --health-timeout 3s --health-retries 15
+    env:
+      DB_URL: jdbc:postgresql://localhost:55432/diagram_studio
+      STUDIO_TEST_DB_URL: jdbc:postgresql://localhost:55432/diagram_studio
+      DB_USER: diagram
+      DB_PASSWORD: diagram_ci_only
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Install and check frontend
+        run: |
+          npm ci
+          npm test
+          node scripts/generate-openapi.mjs
+          git diff --exit-code -- api/openapi.json
+          npm run build
+      - name: Java unit and PostgreSQL integration tests
+        working-directory: backend
+        run: bash mvnw -B --no-transfer-progress verify -Pintegration
+      - name: Start packaged application
+        run: |
+          java -jar backend/target/diagram-studio-1.0.0.jar > backend.log 2>&1 &
+          node scripts/wait-for-api.mjs
+      - name: API regression checks
+        run: npm run test:api
+      - name: Browser regression checks
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - name: Preserve diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-reports
+          if-no-files-found: ignore
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
+            test-results/
+            backend.log

@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: diagram_studio
+      POSTGRES_USER: diagram
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-diagram_local_only}
+    volumes:
+      - diagram_data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U diagram -d diagram_studio"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  app:
+    build: .
+    ports:
+      - "8090:8090"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/diagram_studio
+      DB_USER: diagram
+      DB_PASSWORD: ${DB_PASSWORD:-diagram_local_only}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      STUDIO_OPS_USERNAME: ${STUDIO_OPS_USERNAME:-metrics}
+      STUDIO_OPS_PASSWORD: ${STUDIO_OPS_PASSWORD:-}
+      MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-127.0.0.1}
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  diagram_data:

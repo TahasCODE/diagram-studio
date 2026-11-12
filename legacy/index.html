@@ -1,0 +1,61 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fc">
+<title>Diagram Studio — Interactive System Diagrams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="studio.js" defer></script>
+</head>
+<body>
+<header class="app-header">
+<div class="brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><path d="M7 10v7h7M10 7h7v7"/></svg></div><div><h1>Diagram Studio<span class="beta">BETA</span></h1><p class="tagline">Make complex systems make sense.</p></div></div>
+<div class="actions header-actions"><span id="save-state" class="workspace-label" role="status">Local Workspace</span><button id="theme-toggle" aria-pressed="false">Dark Theme</button><button id="remix" hidden>Remix This Diagram</button><button id="share" class="primary"><span aria-hidden="true">↗</span> Copy Playback Link</button></div>
+</header>
+<main>
+<div class="workspace">
+<div class="workspace-heading"><div><p class="eyebrow">YOUR INTERACTIVE WORKSPACE</p><h2 id="project-heading">One Diagram. Every Path.</h2><p class="workspace-description">Map the system. Explore the possibilities.</p></div><span class="canvas-badge"><span></span> Live Canvas</span></div>
+<section class="board" aria-label="Diagram">
+<div class="canvas-toolbar"><span class="canvas-title"><span aria-hidden="true">◈</span> System Diagram</span><div class="canvas-tools"><div id="history-tools" class="actions"><button id="undo" title="Undo (Ctrl/⌘ Z)" aria-label="Undo Last Edit">↶ Undo</button><button id="redo" title="Redo (Ctrl/⌘ Shift Z)" aria-label="Redo Last Edit">↷ Redo</button></div><span class="canvas-scale">100%</span></div></div>
+<svg id="edges" aria-hidden="true"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/></marker></defs><g id="lines"></g></svg>
+<div id="nodes"></div>
+<div class="canvas-legend"><span><i class="legend-active"></i> Current Step</span><span><i class="legend-selected"></i> Selected Node</span></div>
+</section>
+<div class="workspace-footer"><span>Built for the paths that matter.</span><span>Explore · Explain · Share</span></div>
+</div>
+<aside aria-label="Diagram Controls">
+<section id="examples"><div class="section-heading"><span class="section-icon" aria-hidden="true">▦</span><h2>Start With an Example</h2></div><p class="hint">A starting point for your next explanation.</p><label for="demo">Sample Project</label><div class="sample-picker"><select id="demo"><option value="refund">Refunds and Retries</option><option value="checkout">Checkout and Payment</option><option value="webhook">Webhook Delivery</option></select><button id="load-demo">Open</button></div><div id="demo-confirm" hidden><p>Replace your current local diagram with this example? Copy a playback link first to keep it.</p><div class="actions"><button id="confirm-demo">Replace Diagram</button><button id="cancel-demo">Cancel</button></div></div></section>
+<section class="playback-panel"><div class="section-heading"><span class="section-icon" aria-hidden="true">▷</span><h2>Scenario Playback</h2><span class="section-tag">EXPLORE</span></div><label for="scenario">Active Scenario</label><select id="scenario"></select>
+<p id="scenario-context" class="reader-context" hidden></p><div id="active-note" class="reader-context" hidden><strong>Step Notes</strong><p id="active-note-text"></p></div>
+<p id="step" aria-live="polite"></p><progress id="progress" max="1" value="0" aria-label="Scenario Playback Progress"></progress><ol id="timeline" aria-label="Playback Steps"></ol><div class="actions playback-actions"><button id="prev">← Previous</button><button id="next" class="primary">Next Step →</button></div><div class="playback-footer"><button id="restart">↺ Restart</button><span>← / → to step · Home to restart</span></div></section>
+<section id="editor"><div class="section-heading"><span class="section-icon" aria-hidden="true">⌘</span><h2>Diagram Editor</h2></div>
+<p class="hint">Drag to arrange. Reuse nodes across every scenario.</p>
+<label for="project-title">Project Title</label><input id="project-title" maxlength="80" placeholder="e.g. Order Processing System">
+<button id="auto-arrange">Arrange Nodes</button>
+<label for="label">Selected Node Label</label><input id="label" maxlength="48" placeholder="Give this step a clear name">
+<details class="editor-details"><summary>Node Notes</summary><label for="node-notes">Explain This Node</label><textarea id="node-notes" maxlength="2000" rows="3" placeholder="What happens here? Notes appear during playback."></textarea></details>
+<div class="actions"><button id="add">+ Add Node</button><button id="remove" class="danger">Delete Node</button></div>
+<div class="editor-divider"></div>
+<label for="scenario-name">Current Scenario Name</label><div class="sample-picker"><input id="scenario-name" maxlength="48"><button id="rename-scenario">Rename</button></div>
+<div class="actions"><button id="duplicate-scenario">Duplicate Scenario</button><button id="delete-scenario" class="danger">Delete Scenario</button></div>
+<div id="delete-confirm" class="confirmation-panel" hidden><p id="delete-summary"></p><div class="actions"><button id="confirm-delete-scenario" class="danger">Delete Scenario</button><button id="cancel-delete-scenario">Cancel</button></div></div>
+<details class="editor-details"><summary>Scenario Description</summary><label for="scenario-description">Explain This Path</label><textarea id="scenario-description" maxlength="2000" rows="3" placeholder="Explain the trigger, expected outcome, or failure being demonstrated."></textarea></details>
+<label for="route">Scenario Steps</label><select id="route" size="4"></select>
+<div class="actions"><button id="append">+ Append Selected Node</button><button id="drop">Remove Step</button></div>
+<div class="actions route-actions"><button id="move-up">↑ Move Up</button><button id="move-down">↓ Move Down</button></div>
+<div class="actions route-actions"><button id="insert-step">Insert Before Step</button><button id="replace-step">Replace Step</button></div>
+<details class="editor-details"><summary>Create an Alternate Path</summary><p class="hint">Select a step above. Your new scenario keeps the path up to that point, ready for an alternate ending.</p>
+<label for="branch-name">Alternate Scenario Name</label><input id="branch-name" maxlength="48" placeholder="e.g. Payment Timeout"><button id="branch">Branch From Selected Step</button></details>
+<details class="editor-details"><summary>Add a New Scenario</summary><label for="name">Scenario Name</label><input id="name" maxlength="48" placeholder="e.g. Successful Checkout"><button id="create">+ Add Scenario</button></details>
+<div class="review-panel"><div class="section-heading"><span class="section-icon" aria-hidden="true">✓</span><h2>Scenario Review</h2></div><p class="hint">Node changes flag affected scenarios. Play each path to verify your edits.</p><ul id="reviews"></ul><button id="reviewed">Mark Current Scenario Reviewed</button></div>
+</section>
+<section id="project-files"><div class="section-heading"><span class="section-icon" aria-hidden="true">⇅</span><h2>Project Files</h2></div><p class="hint">Keep a backup or move your work to another browser.</p><div class="actions"><button id="export-project">↓ Export JSON</button><button id="import-project">↑ Import JSON</button></div><input id="project-file" type="file" accept=".json,application/json" hidden><div id="import-confirm" hidden><p id="import-summary"></p><p class="hint">This replaces your local diagram. You can undo it during this session.</p><div class="actions"><button id="confirm-import">Import Project</button><button id="cancel-import">Cancel</button></div></div></section>
+<p id="status" role="status"></p>
+</aside>
+</main>
+</body>
+</html>
