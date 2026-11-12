@@ -5,6 +5,9 @@ private drafts, publish fixed playback snapshots, and let readers explore or
 remix those snapshots without an account. The original standalone prototype is
 preserved in `legacy/`.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, pull request and verification
+workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new changes.
+
 For request tracing, Problem Details, operational metrics, rate limiting,
 transactional audit, pagination/search, production profiles and Java integration
 tests, see [backend/README.md](backend/README.md). The account flow is now explicit:
