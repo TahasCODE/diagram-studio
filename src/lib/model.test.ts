@@ -32,6 +32,7 @@ describe('diagram documents', () => {
     expect(new Set(arranged.nodes.map(n => `${n.x},${n.y}`)).size).toBe(arranged.nodes.length);
     expect(arranged.nodes.every(n => n.x>=13 && n.x<=87 && n.y>=10 && n.y<=90)).toBe(true);
     expect(examples.webhook.nodes[0].x).toBe(16);
+    expect(arranged.scenarios).toEqual(examples.webhook.scenarios);
   });
   it('undoes edits and drops redo history after a new edit', () => {
     const first = structuredClone(examples.refund);

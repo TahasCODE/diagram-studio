@@ -1,4 +1,5 @@
 import type { Diagram } from './model';
+import { arrangeNodes } from './model';
 export const examples: Record<string, Diagram> = {
   "refund": {
     "nodes": [
@@ -195,3 +196,6 @@ export const examples: Record<string, Diagram> = {
     "title": "Webhook Delivery"
   }
 };
+
+// Sample diagrams use the same arrange action as the editor; saved projects retain their positions.
+for (const sample of Object.values(examples)) Object.assign(sample,arrangeNodes(sample,0,900));

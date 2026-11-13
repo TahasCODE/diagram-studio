@@ -10,7 +10,7 @@ function Field({id, label, value, onCommit, multiline = false, max = 48, disable
   useEffect(() => setText(value), [value]);
   const commit = () => { if (text.trim() !== value) onCommit(text.trim()); };
   return <><label htmlFor={id}>{label}</label>{multiline ? <textarea id={id} rows={3} value={text} onChange={e => setText(e.target.value)} onBlur={commit} maxLength={max} disabled={disabled} placeholder={placeholder}/> :
-    <input id={id} value={text} onChange={e => setText(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} maxLength={max} disabled={disabled} placeholder={placeholder}/>}</>;
+    <span className={id==='project-title'?'title-field':undefined}><input id={id} value={text} onChange={e => setText(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} maxLength={max} disabled={disabled} placeholder={placeholder}/>{id==='project-title'&&<span className="title-affordance" title="Edit project title" aria-hidden="true"><Icon name="edit" size={14}/></span>}</span>}</>;
 }
 interface Props {
   document: Diagram; scenario: number; selected?: string; onSelect: (id?: string) => void;
@@ -38,7 +38,7 @@ export function Editor({document, scenario, selected, onSelect, onChange, onScen
     onChange(d => { const steps = d.scenarios[scenario].steps; [steps[index],steps[target]] = [steps[target],steps[index]]; });
     setRoute(target);
   };
-  return <section id="editor"><div className="section-heading"><span className="section-icon" aria-hidden="true">⌘</span><h2>Diagram Editor</h2></div>
+  return <section id="editor"><div className="section-heading"><span className="section-icon"><Icon name="edit" size={14}/></span><h2>Diagram Editor</h2></div>
     <p className="hint">Drag to arrange. Reuse nodes across every scenario. Text changes save when you leave a field.</p>
     <Field id="project-title" label="Project Title" value={document.title || ''} max={80} placeholder="e.g. Order Processing System" onCommit={value => onChange(d => { d.title = value; })}/>
     <button id="auto-arrange" disabled={!document.nodes.length} onClick={() => onChange(d => Object.assign(d, arrangeNodes(d,scenario,globalThis.document.querySelector('.board')?.clientWidth || 900)))}><Icon name="arrange" size={15}/>Arrange Nodes</button>

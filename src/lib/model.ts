@@ -54,13 +54,27 @@ export function flagScenarios(document: Diagram, id: string, reason: string) {
 export function arrangeNodes(document: Diagram, scenario: number, width: number): Diagram {
   const result = structuredClone(document);
   const ids = [...new Set([...result.scenarios[scenario].steps, ...result.nodes.map(n => n.id)])];
-  const columns = Math.min(4, Math.max(1, Math.floor(width / 170)), Math.max(1, Math.ceil(Math.sqrt(ids.length))));
-  const rows = Math.ceil(ids.length / columns);
   const byId = new Map(result.nodes.map(n => [n.id, n]));
-  ids.forEach((id, index) => {
-    const node = byId.get(id)!;
-    node.x = columns === 1 ? 50 : 16 + index % columns * 68 / (columns - 1);
-    node.y = rows === 1 ? 50 : 24 + Math.floor(index / columns) * 52 / (rows - 1);
+  const links=new Map<string,Set<string>>(),incoming=new Set<string>();
+  for(const path of [result.scenarios[scenario],...result.scenarios])for(let i=1;i<path.steps.length;i++){
+    const from=path.steps[i-1],to=path.steps[i];if(from===to)continue;
+    if(!links.has(from))links.set(from,new Set());links.get(from)!.add(to);incoming.add(to);
+  }
+  const ranks=new Map<string,number>();
+  const roots=ids.filter(id=>!incoming.has(id));
+  const queue=roots.length?roots:[ids[0]].filter(Boolean);
+  queue.forEach(id=>ranks.set(id,0));
+  for(let i=0;i<queue.length;i++)for(const next of links.get(queue[i])||[]){
+    if(ranks.has(next))continue;ranks.set(next,ranks.get(queue[i])!+1);queue.push(next);
+  }
+  for(const id of ids)if(!ranks.has(id))ranks.set(id,Math.max(0,...ranks.values())+1);
+  const depth=Math.max(0,...ranks.values())+1;
+  const columns=Math.min(depth,Math.max(1,Math.floor(width/180)));
+  const groups=Array.from({length:columns},()=>[] as string[]);
+  for(const id of ids)groups[ranks.get(id)!%columns].push(id);
+  groups.forEach((group,column)=>{
+    group.sort((a,b)=>ranks.get(a)!-ranks.get(b)!);
+    group.forEach((id,row)=>{const node=byId.get(id)!;node.x=columns===1?50:16+column*68/(columns-1);node.y=group.length===1?50:20+row*60/(group.length-1);});
   });
   return result;
 }

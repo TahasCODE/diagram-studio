@@ -94,4 +94,5 @@ jobs:
             backend/target/surefire-reports/
             backend/target/failsafe-reports/
             test-results/
+            .runtime/design-*.png
             backend.log
