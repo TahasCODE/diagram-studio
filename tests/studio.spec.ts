@@ -41,8 +41,12 @@ test('account settings updates a profile, changes password and preserves the loc
   await page.getByLabel('New Password',{exact:true}).fill('ChangedPassword456');
   await page.getByLabel('Confirm New Password',{exact:true}).fill('ChangedPassword456');
   await page.getByRole('button',{name:'Change Password',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('Current password is incorrect');
+  await expect(page.locator('#current-password-error')).toHaveText('Current password is incorrect.');
+  await expect(page.getByLabel('Current Password',{exact:true})).toHaveAttribute('aria-invalid','true');
+  await expect(page.getByLabel('Current Password',{exact:true})).toHaveAttribute('aria-describedby','current-password-error');
+  await expect(page.getByLabel('Current Password',{exact:true})).toBeFocused();
   await page.getByLabel('Current Password',{exact:true}).fill('AccountPassword123');
+  await expect(page.locator('#current-password-error')).toHaveCount(0);
   await page.screenshot({path:'.runtime/account-settings.png'});
   await page.getByRole('button',{name:'Change Password',exact:true}).click();
   await expect(page.getByText('Password changed successfully.',{exact:false})).toBeVisible();

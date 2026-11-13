@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Account } from '../lib/api';
-import { request } from '../lib/api';
+import { ApiError, request } from '../lib/api';
 import { Dialog } from './Dialog';
 
 export function AccountSettings({account,onClose,onProfile,onSignedOut,onSignOut}:{account:Account;onClose:()=>void;onProfile:(account:Account)=>void;onSignedOut:(message:string)=>void;onSignOut:()=>void}){
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
   const [name,setName]=useState(account.name);
+  const [currentPasswordError,setCurrentPasswordError]=useState('');
+  const currentPasswordRef=useRef<HTMLInputElement>(null);
+  useEffect(()=>{if(currentPasswordError)currentPasswordRef.current?.focus();},[currentPasswordError]);
   const [events,setEvents]=useState<{action:string;createdAt:string}[]>([]);
   const [eventError,setEventError]=useState('');
   const loadEvents=()=>request<typeof events>('/auth/security-events').then(setEvents).catch(()=>setEventError('Security activity is unavailable.'));
@@ -18,10 +21,14 @@ export function AccountSettings({account,onClose,onProfile,onSignedOut,onSignOut
   }
   async function changePassword(event:FormEvent<HTMLFormElement>){
     event.preventDefault();const form=new FormData(event.currentTarget);
+    setCurrentPasswordError('');
     if(form.get('newPassword')!==form.get('confirmPassword')){setError('The new passwords do not match.');return;}
     setBusy(true);setError('');setMessage('');
     try{await request('/auth/change-password','POST',{currentPassword:form.get('currentPassword'),newPassword:form.get('newPassword')});onSignedOut('Password changed successfully. All sessions have been signed out. Sign in with your new password.');}
-    catch(error){setError(error instanceof Error?error.message:'Could not change your password.');}finally{setBusy(false);}
+    catch(error){
+      if(error instanceof ApiError&&error.status===400&&error.message==='Current password is incorrect.')setCurrentPasswordError(error.message);
+      else setError(error instanceof Error?error.message:'Could not change your password.');
+    }finally{setBusy(false);}
   }
   async function signOutAll(){
     setBusy(true);setError('');
@@ -34,7 +41,8 @@ export function AccountSettings({account,onClose,onProfile,onSignedOut,onSignOut
     {error&&<p className="form-error" role="alert">{error}</p>}{message&&<p className="auth-created" role="status">{message}</p>}
     <section className="account-section"><h3>Profile</h3><form onSubmit={saveProfile} aria-busy={busy}><fieldset disabled={busy}><label htmlFor="profile-name">Display Name</label><input id="profile-name" autoComplete="name" value={name} onChange={e=>setName(e.target.value)} maxLength={80} required/><button type="submit" disabled={busy||name.trim()===account.name}>Save Profile</button></fieldset></form></section>
     <section className="account-section"><h3>Change Password</h3><p className="hint">Use at least 10 characters. Changing your password signs out every session, including this one. Your local diagram stays on this device.</p><form onSubmit={changePassword} aria-busy={busy}><fieldset disabled={busy}>
-      <label htmlFor="current-password">Current Password</label><input id="current-password" name="currentPassword" type="password" autoComplete="current-password" maxLength={72} required/>
+      <label htmlFor="current-password">Current Password</label><input ref={currentPasswordRef} id="current-password" name="currentPassword" type="password" autoComplete="current-password" maxLength={72} aria-invalid={!!currentPasswordError} aria-describedby={currentPasswordError?'current-password-error':undefined} onChange={()=>setCurrentPasswordError('')} required/>
+      {currentPasswordError&&<p id="current-password-error" className="form-error" role="alert">{currentPasswordError}</p>}
       <label htmlFor="new-password">New Password</label><input id="new-password" name="newPassword" type="password" autoComplete="new-password" minLength={10} maxLength={72} required/>
       <label htmlFor="confirm-password">Confirm New Password</label><input id="confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength={10} maxLength={72} required/>
       <button className="primary" disabled={busy} type="submit">{busy&&<span className="loading-spinner" aria-hidden="true"/>}Change Password</button>
