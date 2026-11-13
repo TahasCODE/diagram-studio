@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix competing Windows database launches, preserve startup logs and recheck connectivity after builds; add Windows lifecycle CI.
+
 - Add password recovery through email codes and a secure local Gmail SMTP launcher.
 
 - Add Account Settings, display-name editing, password changes, security activity and sign-out everywhere.

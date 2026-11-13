@@ -49,6 +49,13 @@ and `DB_URL` to override them. Set `DB_PASSWORD` before the **first** local data
 initialization if you want a different password. Do not delete `.runtime/postgres`
 if you want to keep your accounts and online-saved projects.
 
+The Windows launcher serializes database starts and reuses an available project
+cluster. It checks the data directory before creating databases and rechecks
+connectivity after the build. Startup errors are appended to
+`.runtime/postgres-server.log`. Do not delete the data directory or PID files to
+fix a startup error. Windows CI checks cold start, simultaneous launchers and data
+preservation across a clean restart.
+
 ## Development
 
 Use three terminals from this folder:
