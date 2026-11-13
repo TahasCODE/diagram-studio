@@ -4,6 +4,7 @@ import { Canvas } from './components/Canvas';
 import { Editor } from './components/Editor';
 import { Playback } from './components/Playback';
 import { Dialog } from './components/Dialog';
+import { RevisionComparison } from './components/RevisionComparison';
 import { AccountSettings } from './components/AccountSettings';
 import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
@@ -285,10 +286,19 @@ export default function App() {
   }
   async function loadRevisions() {
     if (!active || busy) return;
-    setModal('history'); setRevisionLoading(true); setRevisionError(''); setRevisionPreview(null);
+    setModal('history'); setRevisionLoading(true); setRevisionError(''); setRevisionPreview(null); setRevisions([]);
     try { setRevisions(await request<RevisionSummary[]>(`/projects/${active.id}/revisions`)); }
     catch(error) { setRevisionError(errorMessage(error)); }
     finally { setRevisionLoading(false); }
+  }
+  async function previewRevision(version:number) {
+    if(!active||busy)return;
+    setBusy(true);setRevisionError('');setRevisionPreview(null);
+    try {
+      const data=await request<Revision>(`/projects/${active.id}/revisions/${version}`);
+      setRevisionPreview({...data,document:parseDiagram(data.document)});
+    }catch(error){setRevisionError(errorMessage(error));}
+    finally{setBusy(false);}
   }
   async function restoreRevision(version: number) {
     if (!active || !user || busy) return;
@@ -431,13 +441,15 @@ export default function App() {
       {publications.length>1 && <><h3>Published Snapshots</h3><ul className="publication-list">{publications.map((p,i) => <li key={p.id}><a href={'/p/'+p.id} target="_blank" rel="noreferrer">{i===0?'Latest Snapshot':p.title} · {new Date(p.createdAt).toLocaleString()}</a></li>)}</ul></>}
       <p className="hint">{location.hostname==='localhost'||location.hostname==='127.0.0.1'?'This is a local address. Deploy the application before sharing it with someone on another computer.':'Publishing another version creates a new link. Existing snapshots stay unchanged.'}</p>
     </Dialog>}
-    {modal === 'history' && <Dialog title="Version History" onClose={() => {if(!busy)setModal(null);}}>
+    {modal === 'history' && <Dialog title="Version History" className="revision-dialog" onClose={() => {if(!busy)setModal(null);}}>
       <p className="dialog-copy">Every online save keeps a recoverable version. Restoring an older version creates a new one; it never rewrites history or changes published links.</p>
+      <p className="hint">Choose Preview to visually compare a saved version with your current draft, including unsaved edits.</p>
       {revisionLoading && <p role="status">Loading saved versions…</p>}
+      {busy&&<p role="status">Loading saved version…</p>}
       {revisionError && <p className="form-error" role="alert">{revisionError}</p>}
       {!revisionLoading&&!revisionError&&!revisions.length && <p className="hint">No saved versions yet.</p>}
-      <ol className="revision-list">{revisions.map(revision => <li key={revision.version}><span className="revision-marker"><Icon name="history" size={15}/></span><div className="revision-information"><strong>Version {revision.version}{revision.version===active?.version&&<span className="current-version">Current</span>}</strong><p>{revision.title}</p><time dateTime={revision.createdAt}>{new Date(revision.createdAt).toLocaleString()}</time></div><div className="revision-actions"><button disabled={busy} aria-label={'Preview Version '+revision.version} onClick={async () => {if(!active)return;setBusy(true);setRevisionError('');try{const data=await request<Revision>(`/projects/${active.id}/revisions/${revision.version}`);setRevisionPreview({...data,document:parseDiagram(data.document)});}catch(error){setRevisionError(errorMessage(error));}finally{setBusy(false);}}}>Preview</button><button disabled={busy||revision.version===active?.version} aria-label={'Restore Version '+revision.version} onClick={() => confirm('Restore Version '+revision.version,`Restore this version as a new saved version? ${cloudDirty?'Unsaved local edits will be replaced. Export them first if you want to keep them.':'Your current saved version will remain in history.'}`,() => {void restoreRevision(revision.version);})}>Restore</button></div></li>)}</ol>
-      {revisionPreview && <section className="revision-preview"><p className="section-overline">VERSION {revisionPreview.version} PREVIEW</p><h3>{revisionPreview.title}</h3><p>{revisionPreview.document.nodes.length} nodes · {revisionPreview.document.scenarios.length} scenarios</p><ul>{revisionPreview.document.scenarios.map((s,i) => <li key={i}>{s.name}<span>{s.steps.length} steps</span></li>)}</ul></section>}
+      <ol className="revision-list">{revisions.map(revision => <li key={revision.version}><span className="revision-marker"><Icon name="history" size={15}/></span><div className="revision-information"><strong>Version {revision.version}{revision.version===active?.version&&<span className="current-version">Current</span>}</strong><p>{revision.title}</p><time dateTime={revision.createdAt}>{new Date(revision.createdAt).toLocaleString()}</time></div><div className="revision-actions"><button disabled={busy} aria-label={'Preview Version '+revision.version} onClick={() => void previewRevision(revision.version)}>Preview</button><button disabled={busy||revision.version===active?.version} aria-label={'Restore Version '+revision.version} onClick={() => confirm('Restore Version '+revision.version,`Restore this version as a new saved version? ${cloudDirty?'Unsaved local edits will be replaced. Export them first if you want to keep them.':'Your current saved version will remain in history.'}`,() => {void restoreRevision(revision.version);})}>Restore</button></div></li>)}</ol>
+      {revisionPreview && <><section className="revision-preview"><p className="section-overline">VERSION {revisionPreview.version} PREVIEW</p><h3>{revisionPreview.title}</h3><p>{revisionPreview.document.nodes.length} nodes · {revisionPreview.document.scenarios.length} scenarios</p><ul>{revisionPreview.document.scenarios.map((s,i) => <li key={i}>{s.name}<span>{s.steps.length} steps</span></li>)}</ul></section><RevisionComparison before={revisionPreview.document} after={document} version={revisionPreview.version} currentVersion={active!.version} unsaved={cloudDirty}/></>}
       <p className="hint">The latest 100 saved versions are listed. For projects created before version history was added, tracking starts from the migration baseline.</p>
     </Dialog>}
     {modal==='activity'&&<Dialog title={activityProject?'Project Activity':'Account Activity'} onClose={() => setModal(null)}><p className="dialog-copy">A server-recorded history of successful project actions. Deleted-project events remain in your account activity.</p>{activityLoading&&<p role="status">Loading activity…</p>}{activityError&&<p className="form-error" role="alert">{activityError}</p>}{!activityLoading&&!activityError&&activity?.items.length===0&&<p className="hint">No activity recorded yet.</p>}<ul className="activity-list">{activity?.items.map(event=><li key={event.id}><strong>{event.action.split('_').map(word=>word.charAt(0)+word.slice(1).toLowerCase()).join(' ')}{event.version&&<span>Version {event.version}</span>}</strong><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString()}</time></li>)}</ul>{activity&&activity.totalPages>0&&<div className="page-controls"><button disabled={activityLoading||activity.page===0} onClick={() => loadActivity(activity.page-1,activityProject)}>Previous</button><span>Page {activity.page+1} of {activity.totalPages}</span><button disabled={activityLoading||activity.page+1>=activity.totalPages} onClick={() => loadActivity(activity.page+1,activityProject)}>Next</button></div>}</Dialog>}

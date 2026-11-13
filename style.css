@@ -1,6 +1,7 @@
 
 @import './src/styles/workspace.css';
 @import './src/styles/components.css';
+@import './src/styles/revisions.css';
 * { box-sizing:border-box; }
 html,body { margin:0; min-width:320px; background:var(--background); color:var(--ink); font:var(--weight-normal) var(--text-base)/1.5 var(--font); -webkit-font-smoothing:antialiased; }
 #root { height:100dvh; display:flex; flex-direction:column; overflow:hidden; }

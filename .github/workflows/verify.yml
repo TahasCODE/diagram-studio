@@ -109,5 +109,6 @@ jobs:
             backend/target/failsafe-reports/
             test-results/
             .runtime/design-*.png
+            .runtime/revision-*.png
             backend.log
             container.log
