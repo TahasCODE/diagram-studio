@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add visual saved-revision versus current-draft comparison with graph highlights, field details, unsaved-edit awareness and read-only comparison checks.
+
 - Prepare deployment/smoke instructions and evidence-backed portfolio materials; include theme assets and SMTP settings in container deployment, test production guards, and smoke-check packaged/container releases in CI.
 
 - Add reproducible 100/500-node playback benchmarks, align the project limit at 500 nodes, and reuse connector geometry between playback steps based on profiling.

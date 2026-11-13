@@ -1,0 +1,51 @@
+.revision-dialog { --comparison-width:1120px; --revision-list-height:220px; --revision-padding:var(--s6); width:min(var(--comparison-width),calc(100vw - var(--s8))); padding:var(--revision-padding); }
+.revision-dialog .dialog-heading { position:sticky; top:calc(-1 * var(--revision-padding)); z-index:1; background:var(--surface); margin:calc(-1 * var(--revision-padding)) calc(-1 * var(--revision-padding)) var(--s4); padding:var(--s5) var(--revision-padding); border-bottom:1px solid var(--line); }
+.revision-dialog .revision-list { max-height:var(--revision-list-height); overflow:auto; overscroll-behavior:contain; border-block:1px solid var(--line); padding-right:var(--s2); }
+.revision-dialog .revision-preview>ul { max-height:112px; overflow:auto; }
+.revision-comparison { margin-top:var(--s6); padding-top:var(--s6); border-top:1px solid var(--line); scroll-margin-top:calc(var(--header-height) + var(--s6)); }
+.revision-comparison h3 { font-size:var(--text-lg); margin-bottom:var(--s2); }
+.revision-change-counts,.revision-legend { display:flex; flex-wrap:wrap; gap:var(--s2); margin:var(--s4) 0; }
+.revision-change-counts>span { border:1px solid var(--line); border-radius:var(--radius-control); background:var(--soft); padding:var(--s2) var(--s3); font-size:var(--text-xs); color:var(--muted); }
+.revision-change-counts strong { color:var(--ink); margin-right:var(--s1); font-weight:var(--weight-semibold); }
+.revision-badge { display:inline-flex; align-items:center; gap:var(--s1); border:1px solid currentColor; border-radius:var(--radius-control); padding:2px var(--s2); font-size:var(--text-micro); line-height:1.5; font-weight:var(--weight-medium); white-space:nowrap; }
+.revision-badge.added { color:var(--success); background:var(--success-soft); }
+.revision-badge.removed { color:var(--danger); background:var(--danger-soft); }
+.revision-badge.changed { color:var(--warning); background:var(--warning-soft); }
+.revision-legend .hint { align-self:center; margin:0; }
+.revision-graphs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s4); margin-block:var(--s4) var(--s6); }
+.revision-graph { margin:0; min-width:0; border:1px solid var(--line); border-radius:var(--radius-card); overflow:hidden; background:var(--canvas); }
+.revision-graph figcaption { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--s2); padding:var(--s3) var(--s4); border-bottom:1px solid var(--line); color:var(--ink); background:var(--surface); font-size:var(--text-sm); font-weight:var(--weight-medium); }
+.revision-graph figcaption span { color:var(--muted); font-size:var(--text-xs); font-weight:var(--weight-normal); }
+.revision-graph svg { display:block; width:100%; height:auto; }
+.revision-graph-viewport { --revision-graph-min-width:560px; overflow:auto; }
+.revision-graph-viewport svg { min-width:var(--revision-graph-min-width); }
+.revision-graph>p { padding:var(--s4); }
+.revision-graph-edges>path { fill:none; stroke:var(--edge); stroke-width:1.5; }
+.revision-graph-edges>path[data-kind=added] { stroke:var(--success); stroke-width:2.5; }
+.revision-graph-edges>path[data-kind=removed] { stroke:var(--danger); stroke-width:2.5; stroke-dasharray:6 4; }
+.revision-graph-edges>path[data-kind=changed] { stroke:var(--warning); stroke-width:2.5; }
+.revision-graph-node rect { fill:var(--surface); stroke:var(--line-strong); stroke-width:1.5; }
+.revision-graph-label { fill:var(--ink); font:var(--weight-medium) var(--text-lg) var(--font); }
+.revision-graph-mark { fill:var(--ink); font:var(--weight-semibold) var(--text-sm) var(--font); }
+.revision-graph-node[data-kind=added] rect { fill:var(--success-soft); stroke:var(--success); stroke-width:2; }
+.revision-graph-node[data-kind=removed] rect { fill:var(--danger-soft); stroke:var(--danger); stroke-width:2; stroke-dasharray:6 4; }
+.revision-graph-node[data-kind=changed] rect { fill:var(--warning-soft); stroke:var(--warning); stroke-width:2; }
+.revision-change-section { border-top:1px solid var(--line); padding-top:var(--s4); margin-top:var(--s5); }
+.revision-change-section h4 { display:flex; align-items:center; gap:var(--s2); margin:0 0 var(--s3); font-size:var(--text-base); font-weight:var(--weight-semibold); }
+.revision-change-section h4>span { color:var(--muted); font-size:var(--text-xs); font-weight:var(--weight-normal); }
+.revision-change { border:1px solid var(--line); border-radius:var(--radius-control); background:var(--surface); margin-bottom:var(--s2); }
+.revision-change>summary { display:flex; align-items:center; gap:var(--s3); padding:var(--s3); color:var(--ink); font-size:var(--text-sm); }
+.revision-change>summary::before { content:'›'; color:var(--muted); font-size:var(--text-lg); }
+.revision-change[open]>summary::before { content:'⌄'; }
+.revision-change>summary:hover { background:var(--soft); color:var(--ink); }
+.revision-change>summary>span:last-child { min-width:0; overflow-wrap:anywhere; }
+.revision-fields { margin:0; padding:0 var(--s3) var(--s3); }
+.revision-field { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s2) var(--s3); border-top:1px solid var(--line); padding-top:var(--s3); margin-top:var(--s2); }
+.revision-field>dt { grid-column:1/-1; font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--ink); }
+.revision-field>dd { min-width:0; margin:0; background:var(--soft); border:1px solid var(--line); border-radius:var(--radius-control); padding:var(--s3); }
+.revision-value-label { font-size:var(--text-micro); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.revision-field p { white-space:pre-wrap; overflow-wrap:anywhere; font-size:var(--text-sm); line-height:1.7; margin:var(--s2) 0 0; }
+.revision-value-list { white-space:pre-wrap; overflow-wrap:anywhere; font-size:var(--text-sm); line-height:1.7; margin:var(--s2) 0 0; padding-left:var(--s5); }
+.revision-no-changes { padding:var(--s4); border:1px solid var(--line); border-radius:var(--radius-card); color:var(--success); background:var(--success-soft); font-size:var(--text-sm); }
+.revision-match-note { margin-top:var(--s5); }
+@media(max-width:700px) { .revision-dialog { --revision-padding:var(--s5); } .revision-graphs,.revision-field { grid-template-columns:minmax(0,1fr); } .revision-field>dt { grid-column:auto; } }

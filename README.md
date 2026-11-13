@@ -145,6 +145,12 @@ same views on desktop; the tabbed inspector remains available on mobile.
 Every successful online create/save records a full JSONB revision in the same
 transaction as the draft write. **Project → Version History** lists the latest
 100 saved versions and previews each version's title, nodes and scenarios.
+Choose **Preview** to compare that saved revision with the current draft, including
+unsaved edits. Side-by-side graphs highlight added, removed and changed nodes and
+connections; expandable details show labels, positions, notes, ordered steps,
+scenario descriptions and review notes before and after. The comparison is read-only.
+Scenarios currently match by name (duplicate names by occurrence), so renaming a
+scenario appears as removal and addition rather than an inferred rename.
 Restoring requires confirmation and the expected current version. It creates
 a new version rather than rewriting old revisions or public snapshots. A stale
 restore returns 409, preserving the current document. V2 seeds a baseline for
