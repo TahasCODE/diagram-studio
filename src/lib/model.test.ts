@@ -3,6 +3,12 @@ import { examples } from './examples';
 import { arrangeNodes, exportProject, flagScenarios, historyReducer, parseDiagram, publishedDocument, readProjectFile } from './model';
 
 describe('diagram documents', () => {
+  it('accepts a 500-node round trip and rejects a 501st node', () => {
+    const nodes=Array.from({length:500},(_,i)=>({id:`n${i}`,label:`Node ${i}`,x:50,y:50}));
+    const document={title:'Large graph',nodes,scenarios:[{name:'All nodes',steps:nodes.map(n=>n.id)}]};
+    expect(readProjectFile(exportProject(document))).toEqual(parseDiagram(document));
+    expect(()=>parseDiagram({...document,nodes:[...nodes,{id:'extra',label:'Extra',x:50,y:50}]})).toThrow('500 nodes');
+  });
   it('migrates prototype JSON and accepts nullable backend fields', () => {
     const document = parseDiagram({...examples.refund, title:null, nodes:examples.refund.nodes.map(n => ({...n,notes:null}))});
     expect(document.nodes).toHaveLength(6);

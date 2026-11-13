@@ -157,10 +157,13 @@ project endpoints require ownership and use 404 for other users' IDs.
 
 See `api/openapi.json` and `api/contract.md`. Rebuild the machine-readable contract
 with `node scripts/generate-openapi.mjs` after changing its source. JSON requests
-and file imports are limited to 1 MB; documents support 250 nodes, 100 scenarios,
+and file imports are limited to 1 MB; documents support 500 nodes, 100 scenarios,
 and 500 steps per scenario.
 
 ## Verification
+
+For reproducible 100-node and 500-node playback workloads, measurements, profiling
+and their limitations, see [the playback benchmark](benchmarks/README.md).
 
 ```powershell
 npm test

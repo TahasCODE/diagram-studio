@@ -1,0 +1,817 @@
+{
+  "format": "diagram-studio",
+  "version": 1,
+  "project": {
+    "title": "Playback stress fixture: 100 nodes",
+    "nodes": [
+      {
+        "id": "node-0",
+        "label": "Service 001",
+        "x": 10,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-1",
+        "label": "Service 002",
+        "x": 18.88888888888889,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-2",
+        "label": "Service 003",
+        "x": 27.77777777777778,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-3",
+        "label": "Service 004",
+        "x": 36.66666666666667,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-4",
+        "label": "Service 005",
+        "x": 45.55555555555556,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-5",
+        "label": "Service 006",
+        "x": 54.44444444444444,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-6",
+        "label": "Service 007",
+        "x": 63.333333333333336,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-7",
+        "label": "Service 008",
+        "x": 72.22222222222223,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-8",
+        "label": "Service 009",
+        "x": 81.11111111111111,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-9",
+        "label": "Service 010",
+        "x": 90,
+        "y": 10,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-10",
+        "label": "Service 011",
+        "x": 90,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-11",
+        "label": "Service 012",
+        "x": 81.11111111111111,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-12",
+        "label": "Service 013",
+        "x": 72.22222222222223,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-13",
+        "label": "Service 014",
+        "x": 63.333333333333336,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-14",
+        "label": "Service 015",
+        "x": 54.44444444444444,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-15",
+        "label": "Service 016",
+        "x": 45.55555555555556,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-16",
+        "label": "Service 017",
+        "x": 36.66666666666667,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-17",
+        "label": "Service 018",
+        "x": 27.77777777777778,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-18",
+        "label": "Service 019",
+        "x": 18.88888888888889,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-19",
+        "label": "Service 020",
+        "x": 10,
+        "y": 18.88888888888889,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-20",
+        "label": "Service 021",
+        "x": 10,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-21",
+        "label": "Service 022",
+        "x": 18.88888888888889,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-22",
+        "label": "Service 023",
+        "x": 27.77777777777778,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-23",
+        "label": "Service 024",
+        "x": 36.66666666666667,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-24",
+        "label": "Service 025",
+        "x": 45.55555555555556,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-25",
+        "label": "Service 026",
+        "x": 54.44444444444444,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-26",
+        "label": "Service 027",
+        "x": 63.333333333333336,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-27",
+        "label": "Service 028",
+        "x": 72.22222222222223,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-28",
+        "label": "Service 029",
+        "x": 81.11111111111111,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-29",
+        "label": "Service 030",
+        "x": 90,
+        "y": 27.77777777777778,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-30",
+        "label": "Service 031",
+        "x": 90,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-31",
+        "label": "Service 032",
+        "x": 81.11111111111111,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-32",
+        "label": "Service 033",
+        "x": 72.22222222222223,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-33",
+        "label": "Service 034",
+        "x": 63.333333333333336,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-34",
+        "label": "Service 035",
+        "x": 54.44444444444444,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-35",
+        "label": "Service 036",
+        "x": 45.55555555555556,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-36",
+        "label": "Service 037",
+        "x": 36.66666666666667,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-37",
+        "label": "Service 038",
+        "x": 27.77777777777778,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-38",
+        "label": "Service 039",
+        "x": 18.88888888888889,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-39",
+        "label": "Service 040",
+        "x": 10,
+        "y": 36.66666666666667,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-40",
+        "label": "Service 041",
+        "x": 10,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-41",
+        "label": "Service 042",
+        "x": 18.88888888888889,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-42",
+        "label": "Service 043",
+        "x": 27.77777777777778,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-43",
+        "label": "Service 044",
+        "x": 36.66666666666667,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-44",
+        "label": "Service 045",
+        "x": 45.55555555555556,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-45",
+        "label": "Service 046",
+        "x": 54.44444444444444,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-46",
+        "label": "Service 047",
+        "x": 63.333333333333336,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-47",
+        "label": "Service 048",
+        "x": 72.22222222222223,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-48",
+        "label": "Service 049",
+        "x": 81.11111111111111,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-49",
+        "label": "Service 050",
+        "x": 90,
+        "y": 45.55555555555556,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-50",
+        "label": "Service 051",
+        "x": 90,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-51",
+        "label": "Service 052",
+        "x": 81.11111111111111,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-52",
+        "label": "Service 053",
+        "x": 72.22222222222223,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-53",
+        "label": "Service 054",
+        "x": 63.333333333333336,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-54",
+        "label": "Service 055",
+        "x": 54.44444444444444,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-55",
+        "label": "Service 056",
+        "x": 45.55555555555556,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-56",
+        "label": "Service 057",
+        "x": 36.66666666666667,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-57",
+        "label": "Service 058",
+        "x": 27.77777777777778,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-58",
+        "label": "Service 059",
+        "x": 18.88888888888889,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-59",
+        "label": "Service 060",
+        "x": 10,
+        "y": 54.44444444444444,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-60",
+        "label": "Service 061",
+        "x": 10,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-61",
+        "label": "Service 062",
+        "x": 18.88888888888889,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-62",
+        "label": "Service 063",
+        "x": 27.77777777777778,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-63",
+        "label": "Service 064",
+        "x": 36.66666666666667,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-64",
+        "label": "Service 065",
+        "x": 45.55555555555556,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-65",
+        "label": "Service 066",
+        "x": 54.44444444444444,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-66",
+        "label": "Service 067",
+        "x": 63.333333333333336,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-67",
+        "label": "Service 068",
+        "x": 72.22222222222223,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-68",
+        "label": "Service 069",
+        "x": 81.11111111111111,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-69",
+        "label": "Service 070",
+        "x": 90,
+        "y": 63.333333333333336,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-70",
+        "label": "Service 071",
+        "x": 90,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-71",
+        "label": "Service 072",
+        "x": 81.11111111111111,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-72",
+        "label": "Service 073",
+        "x": 72.22222222222223,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-73",
+        "label": "Service 074",
+        "x": 63.333333333333336,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-74",
+        "label": "Service 075",
+        "x": 54.44444444444444,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-75",
+        "label": "Service 076",
+        "x": 45.55555555555556,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-76",
+        "label": "Service 077",
+        "x": 36.66666666666667,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-77",
+        "label": "Service 078",
+        "x": 27.77777777777778,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-78",
+        "label": "Service 079",
+        "x": 18.88888888888889,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-79",
+        "label": "Service 080",
+        "x": 10,
+        "y": 72.22222222222223,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-80",
+        "label": "Service 081",
+        "x": 10,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-81",
+        "label": "Service 082",
+        "x": 18.88888888888889,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-82",
+        "label": "Service 083",
+        "x": 27.77777777777778,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-83",
+        "label": "Service 084",
+        "x": 36.66666666666667,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-84",
+        "label": "Service 085",
+        "x": 45.55555555555556,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-85",
+        "label": "Service 086",
+        "x": 54.44444444444444,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-86",
+        "label": "Service 087",
+        "x": 63.333333333333336,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-87",
+        "label": "Service 088",
+        "x": 72.22222222222223,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-88",
+        "label": "Service 089",
+        "x": 81.11111111111111,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-89",
+        "label": "Service 090",
+        "x": 90,
+        "y": 81.11111111111111,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-90",
+        "label": "Service 091",
+        "x": 90,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-91",
+        "label": "Service 092",
+        "x": 81.11111111111111,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-92",
+        "label": "Service 093",
+        "x": 72.22222222222223,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-93",
+        "label": "Service 094",
+        "x": 63.333333333333336,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-94",
+        "label": "Service 095",
+        "x": 54.44444444444444,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-95",
+        "label": "Service 096",
+        "x": 45.55555555555556,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-96",
+        "label": "Service 097",
+        "x": 36.66666666666667,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-97",
+        "label": "Service 098",
+        "x": 27.77777777777778,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-98",
+        "label": "Service 099",
+        "x": 18.88888888888889,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      },
+      {
+        "id": "node-99",
+        "label": "Service 100",
+        "x": 10,
+        "y": 90,
+        "notes": "Synthetic playback workload; positions are deliberately dense."
+      }
+    ],
+    "scenarios": [
+      {
+        "name": "Read request",
+        "steps": [
+          "node-0",
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-4",
+          "node-5",
+          "node-6",
+          "node-7",
+          "node-8",
+          "node-9",
+          "node-10",
+          "node-11",
+          "node-12",
+          "node-13",
+          "node-14",
+          "node-15",
+          "node-16",
+          "node-17",
+          "node-18",
+          "node-19",
+          "node-20",
+          "node-21",
+          "node-22",
+          "node-23",
+          "node-24",
+          "node-25",
+          "node-26",
+          "node-27",
+          "node-28",
+          "node-29",
+          "node-30",
+          "node-31",
+          "node-32",
+          "node-33",
+          "node-34",
+          "node-35",
+          "node-36",
+          "node-37",
+          "node-38",
+          "node-39",
+          "node-40",
+          "node-41",
+          "node-42",
+          "node-43",
+          "node-44",
+          "node-45",
+          "node-46",
+          "node-47",
+          "node-48",
+          "node-49",
+          "node-50",
+          "node-51",
+          "node-52",
+          "node-53",
+          "node-54",
+          "node-55",
+          "node-56",
+          "node-57",
+          "node-58",
+          "node-59",
+          "node-60",
+          "node-61",
+          "node-62",
+          "node-63",
+          "node-64",
+          "node-65",
+          "node-66",
+          "node-67",
+          "node-68",
+          "node-69",
+          "node-70",
+          "node-71",
+          "node-72",
+          "node-73",
+          "node-74",
+          "node-75",
+          "node-76",
+          "node-77",
+          "node-78",
+          "node-79",
+          "node-80",
+          "node-81",
+          "node-82",
+          "node-83",
+          "node-84",
+          "node-85",
+          "node-86",
+          "node-87",
+          "node-88",
+          "node-89",
+          "node-90",
+          "node-91",
+          "node-92",
+          "node-93",
+          "node-94",
+          "node-95",
+          "node-96",
+          "node-97",
+          "node-98",
+          "node-99"
+        ],
+        "description": "Synthetic serpentine path. This is a rendering workload, not an architecture example."
+      }
+    ]
+  }
+}

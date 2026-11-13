@@ -15,7 +15,7 @@ const schemas={
  Session:{type:'object',required:['user','csrfToken'],properties:{user:{anyOf:[ref('Account'),{type:'null'}]},csrfToken:{type:'string'}}},
  Node:{type:'object',required:['id','label','x','y'],properties:{id:{type:'string',minLength:1,maxLength:100},label:{type:'string',minLength:1,maxLength:48},x:{type:'number',minimum:0,maximum:100},y:{type:'number',minimum:0,maximum:100},notes:optionalText(2000)}},
  Scenario:{type:'object',required:['name','steps'],properties:{name:{type:'string',minLength:1,maxLength:48},steps:{type:'array',maxItems:500,items:{type:'string'}},description:optionalText(2000),review:{type:['array','null'],maxItems:100,items:{type:'string',minLength:1,maxLength:500}}}},
- Diagram:{type:'object',required:['nodes','scenarios'],properties:{title:optionalText(80),nodes:{type:'array',maxItems:250,items:ref('Node')},scenarios:{type:'array',minItems:1,maxItems:100,items:ref('Scenario')}}},
+ Diagram:{type:'object',required:['nodes','scenarios'],properties:{title:optionalText(80),nodes:{type:'array',maxItems:500,items:ref('Node')},scenarios:{type:'array',minItems:1,maxItems:100,items:ref('Scenario')}}},
  Draft:{type:'object',required:['id','version','updatedAt','document'],properties:{id:{type:'string',format:'uuid'},version:{type:'integer',minimum:1},updatedAt:{type:'string',format:'date-time'},document:ref('Diagram')}},
  ProjectSummary:{type:'object',properties:{id:{type:'string',format:'uuid'},title:{type:'string'},version:{type:'integer'},updatedAt:{type:'string',format:'date-time'}}},
  PublicationSummary:{type:'object',properties:{id:{type:'string',format:'uuid'},title:{type:'string'},createdAt:{type:'string',format:'date-time'}}},

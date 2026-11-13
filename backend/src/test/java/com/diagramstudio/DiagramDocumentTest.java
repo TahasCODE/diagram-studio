@@ -6,6 +6,14 @@ import org.springframework.web.server.ResponseStatusException;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DiagramDocumentTest {
+    @Test void acceptsFiveHundredNodesAndRejectsOneMore() {
+        var nodes = java.util.stream.IntStream.range(0,500).mapToObj(i -> node("n"+i)).toList();
+        var scenarios = List.of(new DiagramDocument.Scenario("All nodes",nodes.stream().map(DiagramDocument.Node::id).toList(),null,null));
+        assertDoesNotThrow(() -> new DiagramDocument("Large graph",nodes,scenarios).validate());
+        var oversized = new java.util.ArrayList<>(nodes);
+        oversized.add(node("extra"));
+        assertThrows(ResponseStatusException.class,() -> new DiagramDocument("Too large",oversized,scenarios).validate());
+    }
     private DiagramDocument.Node node(String id) { return new DiagramDocument.Node(id,"Node",50.0,50.0,null); }
     @Test void acceptsRepeatedStepsAndEmptyGraphs() {
         assertDoesNotThrow(() -> new DiagramDocument("Loop",List.of(node("a")),List.of(new DiagramDocument.Scenario("Retry",List.of("a","a"),null,null))).validate());
