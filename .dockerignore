@@ -4,6 +4,14 @@ dist
 .tools
 .git
 .env
+.env.*
+.idea
+.vscode
+.agents
+.codex
+.aws
+output
+tmp
 legacy
 backend/target
 test-results

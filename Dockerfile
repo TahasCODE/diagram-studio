@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm ci
 COPY index.html tsconfig.json vite.config.ts style.css ./
 COPY src ./src
+COPY public ./public
 RUN npm run build
 
 FROM maven:3.9-eclipse-temurin-25 AS backend

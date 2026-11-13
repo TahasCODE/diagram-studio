@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Prepare deployment/smoke instructions and evidence-backed portfolio materials; include theme assets and SMTP settings in container deployment, test production guards, and smoke-check packaged/container releases in CI.
+
 - Add reproducible 100/500-node playback benchmarks, align the project limit at 500 nodes, and reuse connector geometry between playback steps based on profiling.
 
 - Apply the saved theme before the application bundle loads to prevent a light flash when refreshing dark mode.
