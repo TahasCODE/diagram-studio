@@ -1,5 +1,6 @@
 ﻿:root {
   color-scheme: light;
+  background:var(--background);
   --brand-50:#eff8f3; --brand-100:#dbefe2; --brand-200:#b9ddc8; --brand-300:#8ac3a5; --brand-400:#58a580; --brand-500:#358363; --brand-600:#276b50; --brand-700:#205640; --brand-800:#1b4535; --brand-900:#133329;
   --neutral-50:#f7f9f8; --neutral-100:#eef2ef; --neutral-200:#dce4df; --neutral-300:#c4d0c8; --neutral-400:#98aaa0; --neutral-500:#71867a; --neutral-600:#596f61; --neutral-700:#405449; --neutral-800:#2b3c32; --neutral-900:#17251e;
   --background:#f4f7f5; --surface:#fff; --surface-raised:#fff; --soft:var(--neutral-50); --canvas:#fbfdfc; --ink:#1b2c22; --muted:#576e60; --subtle:#62766a;
