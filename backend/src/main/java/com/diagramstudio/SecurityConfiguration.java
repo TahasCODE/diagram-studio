@@ -40,9 +40,10 @@ public class SecurityConfiguration {
     }
     @Bean
     @org.springframework.core.annotation.Order(2)
-    SecurityFilterChain security(HttpSecurity http, HttpSessionSecurityContextRepository repository) throws Exception {
+    SecurityFilterChain security(HttpSecurity http, HttpSessionSecurityContextRepository repository,org.springframework.jdbc.core.JdbcTemplate jdbc) throws Exception {
         return http
             .securityContext(context -> context.securityContextRepository(repository))
+            .addFilterBefore(new SessionVersionFilter(jdbc),org.springframework.security.web.access.intercept.AuthorizationFilter.class)
             .csrf(csrf -> csrf.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/me", "/api/auth/login", "/api/auth/register", "/api/health").permitAll()

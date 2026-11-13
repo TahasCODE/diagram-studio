@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Account Settings, display-name editing, password changes, security activity and sign-out everywhere.
+
 - Require email verification with expiring single-use codes and Gmail SMTP support.
 
 - Add a contribution guide and pull request template for future changes.

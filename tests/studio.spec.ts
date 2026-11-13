@@ -25,6 +25,37 @@ async function signInAfterRegistration(page: Page,password: string) {
   await page.getByRole('button',{name:'Continue to Workspace'}).click();
 }
 
+test('account settings updates a profile, changes password and preserves the local diagram',async({page})=>{
+  const email=`settings-${crypto.randomUUID()}@example.test`;
+  await page.goto('/');await page.locator('#sign-in').click();
+  await page.getByRole('button',{name:'New here? Create an Account'}).click();
+  await page.getByLabel('Your Name').fill('Account Tester');await page.getByLabel('Email Address').fill(email);
+  await page.getByLabel('Password',{exact:true}).fill('AccountPassword123');
+  await page.getByRole('button',{name:'Create Account',exact:true}).click();
+  await signInAfterRegistration(page,'AccountPassword123');
+  const title=await page.locator('#project-heading').textContent();
+  await page.getByRole('button',{name:'Account Settings',exact:true}).click();
+  await page.getByLabel('Display Name').fill('Updated Tester');await page.getByRole('button',{name:'Save Profile',exact:true}).click();
+  await expect(page.getByText('Your profile has been updated.')).toBeVisible();
+  await page.getByLabel('Current Password',{exact:true}).fill('WrongPassword123');
+  await page.getByLabel('New Password',{exact:true}).fill('ChangedPassword456');
+  await page.getByLabel('Confirm New Password',{exact:true}).fill('ChangedPassword456');
+  await page.getByRole('button',{name:'Change Password',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('Current password is incorrect');
+  await page.getByLabel('Current Password',{exact:true}).fill('AccountPassword123');
+  await page.screenshot({path:'.runtime/account-settings.png'});
+  await page.getByRole('button',{name:'Change Password',exact:true}).click();
+  await expect(page.getByText('Password changed successfully.',{exact:false})).toBeVisible();
+  await page.getByLabel('Password',{exact:true}).fill('ChangedPassword456');
+  await page.getByRole('dialog').getByRole('button',{name:'Sign In',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'You’re Signed In'})).toBeVisible();
+  await page.getByRole('button',{name:'Continue to Workspace'}).click();
+  await expect(page.locator('#project-heading')).toHaveText(title!);
+  await page.getByRole('button',{name:'Account Settings',exact:true}).click();
+  await expect(page.getByLabel('Display Name')).toHaveValue('Updated Tester');
+  await expect(page.getByText('Password Changed',{exact:true})).toBeVisible();
+});
+
 test('migrates a prototype project and preserves editing, review, history, import and export', async ({page}) => {
   await page.addInitScript(document => localStorage.setItem('diagram-studio-v1',JSON.stringify(document)), {...examples.refund,title:'Existing Prototype Project'});
   const errors: string[] = []; page.on('pageerror',error => errors.push(error.message));
