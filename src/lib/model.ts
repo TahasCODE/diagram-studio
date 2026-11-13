@@ -15,8 +15,8 @@ const text = (value: unknown, max: number, optional = false): string | undefined
 
 export function parseDiagram(raw: unknown): Diagram {
   const data = record(raw);
-  if (!Array.isArray(data.nodes) || data.nodes.length > 250 || !Array.isArray(data.scenarios) || !data.scenarios.length || data.scenarios.length > 100)
-    throw new Error('A project supports 250 nodes and 1–100 scenarios.');
+  if (!Array.isArray(data.nodes) || data.nodes.length > 500 || !Array.isArray(data.scenarios) || !data.scenarios.length || data.scenarios.length > 100)
+    throw new Error('A project supports 500 nodes and 1–100 scenarios.');
   const nodes = data.nodes.map(value => {
     const node = record(value);
     if (![node.x, node.y].every(n => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100)) throw new Error('Invalid node positions.');

@@ -3826,7 +3826,7 @@
           },
           "nodes": {
             "type": "array",
-            "maxItems": 250,
+            "maxItems": 500,
             "items": {
               "$ref": "#/components/schemas/Node"
             }

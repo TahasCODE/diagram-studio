@@ -12,7 +12,7 @@ public record DiagramDocument(String title, List<Node> nodes, List<Scenario> sce
 
     public DiagramDocument validate() {
         check(title == null || title.length() <= 80, "Project title is too long.");
-        check(nodes != null && nodes.size() <= 250, "A diagram supports up to 250 nodes.");
+        check(nodes != null && nodes.size() <= 500, "A diagram supports up to 500 nodes.");
         check(scenarios != null && !scenarios.isEmpty() && scenarios.size() <= 100, "A diagram needs 1–100 scenarios.");
         Set<String> ids = new HashSet<>();
         for (Node node : nodes) {

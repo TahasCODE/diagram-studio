@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:api": "node scripts/check-api.mjs",
+    "bench:fixtures": "node scripts/playback-fixtures.mjs",
+    "bench:playback": "node scripts/benchmark-playback.mjs",
     "backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backend.ps1",
     "db:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/database.ps1 start",
     "db:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/database.ps1 stop"
@@ -25,6 +27,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.0.0",
+    "source-map-js": "1.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.3.8",
     "vitest": "^4.0.0"
