@@ -39,16 +39,18 @@ public class AuthController {
         @Override public String toString() {return "Login[credentials=REDACTED]";}
     }
     public record Session(Account user, String csrfToken) {}
-    private record Credential(Account account, String hash) {}
+    private record Credential(Account account, String hash, long version) {}
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwords;
     private final HttpSessionSecurityContextRepository contexts;
     private final AccountCodes codes;
     private final EmailVerification verification;
+    private final AccountSecurity security;
 
-    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts, AccountCodes codes, EmailVerification verification) {
+    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts, AccountCodes codes, EmailVerification verification, AccountSecurity security) {
         this.jdbc = jdbc; this.passwords = passwords; this.contexts = contexts;
         this.codes=codes; this.verification=verification;
+        this.security=security;
     }
 
     @GetMapping("/me")
@@ -95,8 +97,8 @@ public class AuthController {
     Account login(@Valid @RequestBody Login form, HttpServletRequest request, HttpServletResponse response) {
         if (form.password().getBytes(StandardCharsets.UTF_8).length > 72)
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
-        List<Credential> credentials = jdbc.query("SELECT id,name,email,password_hash FROM app_users WHERE email=?",
-            (rs, row) -> new Credential(new Account(rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("email")), rs.getString("password_hash")),
+        List<Credential> credentials = jdbc.query("SELECT id,name,email,password_hash,auth_version FROM app_users WHERE email=?",
+            (rs, row) -> new Credential(new Account(rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("email")), rs.getString("password_hash"),rs.getLong("auth_version")),
             form.email().trim().toLowerCase(Locale.ROOT));
         // Run a bcrypt comparison even for unknown accounts to reduce account enumeration by timing.
         String hash = credentials.isEmpty() ? "$2a$10$7EqJtq98hPqEX7fNZaFWoO5uB2Ji2qJrDq5OqF9dZH3Fq9O9Q8T2u" : credentials.getFirst().hash();
@@ -105,14 +107,15 @@ public class AuthController {
         Account account = credentials.getFirst().account();
         if(!Boolean.TRUE.equals(jdbc.queryForObject("SELECT email_verified_at IS NOT NULL FROM app_users WHERE id=?",Boolean.class,account.id())))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Verify your email before signing in. Request a verification code to continue.");
-        authenticate(account, request, response);
+        authenticate(account,credentials.getFirst().version(), request, response);
         return account;
     }
 
-    private void authenticate(Account account, HttpServletRequest request, HttpServletResponse response) {
+    private void authenticate(Account account,long version, HttpServletRequest request, HttpServletResponse response) {
         if (request.getSession(false) != null) request.changeSessionId();
-        var principal = new User(account.id().toString(), "", List.of());
-        var auth = UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of());
+        var authorities=List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SESSION_VERSION_"+version));
+        var principal = new User(account.id().toString(), "", authorities);
+        var auth = UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities);
         var context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
@@ -122,5 +125,30 @@ public class AuthController {
     @PostMapping("/logout") @ResponseStatus(HttpStatus.NO_CONTENT)
     void logout(HttpServletRequest request, HttpServletResponse response, Authentication auth) {
         new SecurityContextLogoutHandler().logout(request, response, auth);
+    }
+
+    public record ChangePassword(@NotBlank @Size(max=72) String currentPassword,
+                                 @NotBlank @Size(min=10,max=72) String newPassword) {
+        @Override public String toString(){return "ChangePassword[credentials=REDACTED]";}
+    }
+    public record Profile(@NotBlank @Size(max=80) String name) {}
+    @PostMapping("/change-password") @ResponseStatus(HttpStatus.NO_CONTENT)
+    void changePassword(@Valid @RequestBody ChangePassword form,Authentication auth,HttpServletRequest request,HttpServletResponse response){
+        security.changePassword(UUID.fromString(auth.getName()),form.currentPassword(),form.newPassword());
+        logout(request,response,auth);
+    }
+    @PutMapping("/profile")
+    Account profile(@Valid @RequestBody Profile form,Authentication auth){
+        UUID id=UUID.fromString(auth.getName());security.changeName(id,form.name());
+        return jdbc.queryForObject("SELECT id,name,email FROM app_users WHERE id=?",(rs,row)->new Account(id,rs.getString("name"),rs.getString("email")),id);
+    }
+    @GetMapping("/security-events")
+    List<Map<String,Object>> securityEvents(Authentication auth){
+        return jdbc.query("SELECT action,created_at FROM account_security_events WHERE owner_id=? ORDER BY id DESC LIMIT 20",
+            (rs,row)->Map.<String,Object>of("action",rs.getString("action"),"createdAt",rs.getTimestamp("created_at").toInstant()),UUID.fromString(auth.getName()));
+    }
+    @PostMapping("/logout-all") @ResponseStatus(HttpStatus.NO_CONTENT)
+    void logoutAll(Authentication auth,HttpServletRequest request,HttpServletResponse response){
+        security.signOutEverywhere(UUID.fromString(auth.getName()));logout(request,response,auth);
     }
 }

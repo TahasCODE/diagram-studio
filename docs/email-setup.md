@@ -4,6 +4,12 @@ New and existing accounts must verify their email before signing in. Migration V
 signs out existing sessions; existing users choose **Need to Verify Your Email?**
 from the sign-in dialog and request a code. Projects are preserved.
 
+Migration V5 also signs out older sessions once to introduce credential versions.
+Password changes and **Sign Out All Devices** increment this version and remove
+persisted sessions. Every authenticated API request checks it, including sessions
+saved by a concurrent login. Requests already authorized before revocation may
+finish. Password-change and profile events contain no password or code data.
+
 ## Gmail
 
 Enable Google 2-Step Verification and create an App Password for the sender account.

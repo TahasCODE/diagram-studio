@@ -11,6 +11,10 @@ workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new c
 Account creation requires an email code. Configure [Gmail SMTP or the local test
 mailbox](docs/email-setup.md) before registering an account.
 
+After signing in, open your name in the header for **Account Settings**. You can
+edit your display name, change your password, review recent security activity or
+sign out every device. Password changes sign out all sessions; local diagrams remain.
+
 For request tracing, Problem Details, operational metrics, rate limiting,
 transactional audit, pagination/search, production profiles and Java integration
 tests, see [backend/README.md](backend/README.md). The account flow is now explicit:

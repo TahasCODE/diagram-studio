@@ -4,6 +4,7 @@ import { Canvas } from './components/Canvas';
 import { Editor } from './components/Editor';
 import { Playback } from './components/Playback';
 import { Dialog } from './components/Dialog';
+import { AccountSettings } from './components/AccountSettings';
 import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
 import { Icon } from './components/Icon';
@@ -60,7 +61,7 @@ export default function App() {
   const [viewerError, setViewerError] = useState('');
   const readOnly = !!publicationId || initial.shared;
   const [dark, setDark] = useState(() => { try { return localStorage.getItem(STORAGE_KEY+'-theme') === 'dark'; } catch { return false; } });
-  const [modal, setModal] = useState<'auth'|'projects'|'confirm'|'share'|'history'|'activity'|null>(null);
+  const [modal, setModal] = useState<'account'|'auth'|'projects'|'confirm'|'share'|'history'|'activity'|null>(null);
   const [panel, setPanel] = useState<Panel>('playback');
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
   const [revisionLoading, setRevisionLoading] = useState(false);
@@ -302,7 +303,7 @@ export default function App() {
       onProjects={loadProjects} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
       saveLabel={readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice}
       headerActions={<>
-        {user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Sign Out" onClick={() => confirm('Sign Out','Sign out and clear this local workspace? Export or save changes you want to keep first.',async () => {setBusy(true);try {await request('/auth/logout','POST');await session();setUser(null);setActive(null);if(readOnly)location.assign('/');else openDocument(structuredClone(examples.refund));}catch(error){setNotice(errorMessage(error));}finally{setBusy(false);}})}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>}
+        {user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Account Settings" onClick={() => setModal('account')}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>}
         {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : <button id="save-online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
         <button id="share" className="primary" disabled={busy||!sessionReady} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':'Publish & Share'}</button>
       </>}
@@ -332,6 +333,7 @@ export default function App() {
     </WorkspaceShell>
 
     {modal === 'confirm' && confirmDetails && <Dialog title={confirmDetails.title} onClose={() => setModal(null)}><p className="dialog-copy">{confirmDetails.message}</p><div className="actions"><button className="primary" onClick={() => { setModal(null); confirmDetails.action(); }}>Continue</button><button onClick={() => setModal(null)}>Cancel</button></div></Dialog>}
+    {modal==='account'&&user&&<AccountSettings account={user} onClose={()=>setModal(null)} onProfile={setUser} onSignedOut={message=>{setUser(null);setActive(null);setAuthMode('login');setAuthError('');setAuthMessage(message);setAuthSuccess(null);setModal('auth');}} onSignOut={()=>confirm('Sign Out','Sign out of this browser? Your local diagram will remain on this device.',async()=>{setBusy(true);try{await request('/auth/logout','POST');await session();setUser(null);setActive(null);setNotice('Signed out. Your local diagram remains on this device.');}catch(error){setNotice(errorMessage(error));}finally{setBusy(false);}})}/>}
     {modal === 'auth' && <Dialog title={authSuccess?'You’re Signed In':authMode==='verify'?'Verify Your Email':authMode==='login'?'Sign In to Diagram Studio':'Create Your Account'} onClose={() => {if(!busy)setModal(null);}}>
       {authSuccess ? <div className="auth-success" role="status"><span className="auth-success-icon"><Icon name="check" size={28}/></span><h3>Welcome back, {authSuccess.name.split(' ')[0]}.</h3><p>You’re securely signed in as <strong>{authSuccess.email}</strong>. Your saved projects and version history are ready.</p><button className="primary" onClick={() => {setModal(null);setAuthSuccess(null);}}>Continue to Workspace<Icon name="right" size={16}/></button></div> : <>
         <p className="dialog-copy">{authMode==='verify'?'Enter the code from your inbox. It expires in 10 minutes. Check spam if it has not arrived.':authMode==='login'?'Sign in to save private projects, publish diagrams, and recover previous versions.':'Create an account and verify your email to secure your private workspace.'}</p>

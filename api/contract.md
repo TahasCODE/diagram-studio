@@ -1,5 +1,12 @@
 # Diagram Studio API contract
 
+Account Settings endpoints: PUT `/auth/profile` accepts `{name}` and returns the
+updated account. POST `/auth/change-password` accepts `{currentPassword,newPassword}`
+and returns 204, revoking all sessions and pending resets. POST `/auth/logout-all`
+returns 204 and revokes all sessions. GET `/auth/security-events` returns the latest
+20 owned security events. Authenticated API requests validate the stored credential
+version, preventing an old concurrent login from surviving password changes.
+
 Registration sends a six-digit verification code. Correct-password sign-in returns
 403 until verified. POST `/auth/verify-email` accepts `{email,code}` and returns 204
 without signing in. POST `/auth/resend-verification` accepts `{email}`, returns a

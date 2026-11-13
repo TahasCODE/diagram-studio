@@ -82,4 +82,39 @@ class EmailVerificationIT {
             assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM app_users WHERE email=?",Integer.class,email));
         }finally{smtp.setPort(port);}
     }
+    @Test void passwordChangeRevokesOtherSessionsAndRejectsStaleCredentialVersions()throws Exception {
+        call("me",null,200);
+        String email="password-"+UUID.randomUUID()+"@example.test";
+        String old="OriginalPassword123",next="ChangedPassword456";
+        UUID id=null;
+        try{
+            id=UUID.fromString((String)call("register",Map.of("name","Password Test","email",email,"password",old),201).get("id"));
+            call("verify-email",Map.of("email",email,"code",mail(email).getLast().get("code")),204);
+            call("login",Map.of("email",email,"password",old),200);
+            var second=HttpClient.newBuilder().cookieHandler(new CookieManager(null,CookiePolicy.ACCEPT_ALL)).build();
+            String base="http://127.0.0.1:"+environment.getProperty("local.server.port")+"/api";
+            var me=second.send(HttpRequest.newBuilder(URI.create(base+"/auth/me")).build(),HttpResponse.BodyHandlers.ofString());
+            String token=(String)json.readValue(me.body(),Map.class).get("csrfToken");
+            var login=HttpRequest.newBuilder(URI.create(base+"/auth/login")).header("Content-Type","application/json").header("X-CSRF-TOKEN",token)
+                .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(Map.of("email",email,"password",old)))).build();
+            assertEquals(200,second.send(login,HttpResponse.BodyHandlers.ofString()).statusCode());
+            call("change-password",Map.of("currentPassword","IncorrectPassword","newPassword",next),400);
+            call("change-password",Map.of("currentPassword",old,"newPassword",old),400);
+            call("change-password",Map.of("currentPassword",old,"newPassword","é".repeat(40)),400);
+            call("change-password",Map.of("currentPassword",old,"newPassword",next),204);
+            assertNull(call("me",null,200).get("user"));
+            assertEquals(401,second.send(HttpRequest.newBuilder(URI.create(base+"/projects")).build(),HttpResponse.BodyHandlers.ofString()).statusCode());
+            call("login",Map.of("email",email,"password",old),401);
+            call("login",Map.of("email",email,"password",next),200);
+            assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM account_security_events WHERE owner_id=? AND action='PASSWORD_CHANGED'",Integer.class,id));
+            // Simulate an old login persisted after password rotation: its session row still exists.
+            jdbc.update("UPDATE app_users SET auth_version=auth_version+1 WHERE id=?",id);
+            call("me",null,401);
+            assertNull(call("me",null,200).get("user"));
+            call("login",Map.of("email",email,"password",next),200);
+            call("logout-all",Map.of(),204);
+            assertNull(call("me",null,200).get("user"));
+            assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM account_security_events WHERE owner_id=? AND action='SESSIONS_REVOKED'",Integer.class,id));
+        }finally{if(id!=null)jdbc.update("DELETE FROM app_users WHERE id=?",id);}
+    }
 }
