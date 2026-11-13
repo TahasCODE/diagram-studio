@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add password recovery through email codes and a secure local Gmail SMTP launcher.
+
 - Add Account Settings, display-name editing, password changes, security activity and sign-out everywhere.
 
 - Require email verification with expiring single-use codes and Gmail SMTP support.

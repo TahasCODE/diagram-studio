@@ -71,6 +71,44 @@ class EmailVerificationIT {
             call("logout",Map.of(),204);
         }finally{if(id!=null)jdbc.update("DELETE FROM app_users WHERE id=?",id);}
     }
+    @Test void recoveryRequiresResetCodeRevokesSessionsAndDoesNotRevealUnknownAccounts()throws Exception {
+        call("me",null,200);
+        String email="recovery-"+UUID.randomUUID()+"@example.test";
+        String old="ForgottenPassword123",next="RecoveredPassword456";
+        UUID id=null;
+        try{
+            id=UUID.fromString((String)call("register",Map.of("name","Recovery Test","email",email,"password",old),201).get("id"));
+            String verify=(String)mail(email).getLast().get("code");
+            var absent=call("forgot-password",Map.of("email","missing-"+UUID.randomUUID()+"@example.test"),200);
+            assertEquals(absent,call("forgot-password",Map.of("email",email),200));
+            assertEquals(1,mail(email).size()); // Unverified accounts receive no reset email.
+            call("reset-password",Map.of("email",email,"code",verify,"newPassword",next),400);
+            call("verify-email",Map.of("email",email,"code",verify),204);
+            call("login",Map.of("email",email,"password",old),200);
+            assertEquals(absent,call("forgot-password",Map.of("email",email),200));
+            call("forgot-password",Map.of("email",email),200);
+            assertEquals(2,mail(email).size());
+            String code=(String)mail(email).getLast().get("code");
+            String wrong=code.equals("000000")?"111111":"000000";
+            for(int i=0;i<5;i++)call("reset-password",Map.of("email",email,"code",wrong,"newPassword",next),400);
+            call("reset-password",Map.of("email",email,"code",code,"newPassword",next),400);
+            assertEquals(5,jdbc.queryForObject("SELECT attempts FROM account_codes WHERE user_id=? AND purpose='RESET_PASSWORD'",Integer.class,id));
+            jdbc.update("UPDATE account_codes SET sent_at=now()-interval '61 seconds' WHERE user_id=?",id);
+            call("forgot-password",Map.of("email",email),200);
+            code=(String)mail(email).getLast().get("code");
+            jdbc.update("UPDATE account_codes SET expires_at=now()-interval '1 second' WHERE user_id=?",id);
+            call("reset-password",Map.of("email",email,"code",code,"newPassword",next),400);
+            jdbc.update("UPDATE account_codes SET expires_at=now()+interval '10 minutes' WHERE user_id=?",id);
+            call("reset-password",Map.of("email",email,"code",code,"newPassword",next),204);
+            assertNull(call("me",null,200).get("user"));
+            call("reset-password",Map.of("email",email,"code",code,"newPassword",old),400);
+            call("login",Map.of("email",email,"password",old),401);
+            call("login",Map.of("email",email,"password",next),200);
+            assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM account_security_events WHERE owner_id=? AND action='PASSWORD_RESET'",Integer.class,id));
+            assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM account_codes WHERE user_id=?",Integer.class,id));
+            call("logout",Map.of(),204);
+        }finally{if(id!=null)jdbc.update("DELETE FROM app_users WHERE id=?",id);}
+    }
     @Test void smtpFailureRollsBackRegistration()throws Exception {
         call("me",null,200);
         var smtp=(JavaMailSenderImpl)sender;

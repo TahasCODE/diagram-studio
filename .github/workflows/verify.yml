@@ -29,6 +29,8 @@ jobs:
       DB_USER: diagram
       DB_PASSWORD: diagram_ci_only
       CI: 'true'
+      # Dedicated Java tests exercise the lower production-style rate limit.
+      AUTH_MAX_ATTEMPTS: '200'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

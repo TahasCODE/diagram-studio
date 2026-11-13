@@ -6,7 +6,7 @@ const auth={cookieAuth:[]};
 const write={cookieAuth:[],csrfToken:[]};
 const idParameter={name:'id',in:'path',required:true,schema:{type:'string',format:'uuid'}};
 function operation(operationId,description,method,response,body,security=[],extra={}) {
-  return {operationId,description,security,...(body?{requestBody:{required:true,...json(body)}}:{}),responses:{[method==='post'&&['register','createProject','publishProject','remixPublication'].includes(operationId)?'201':method==='delete'||['logout','verifyEmail','changePassword','logoutAll'].includes(operationId)?'204':'200']:{description:'Successful response',...(response?json(response):{})},'400':error,'401':error,'403':error,...extra}};
+  return {operationId,description,security,...(body?{requestBody:{required:true,...json(body)}}:{}),responses:{[method==='post'&&['register','createProject','publishProject','remixPublication'].includes(operationId)?'201':method==='delete'||['logout','verifyEmail','changePassword','logoutAll','resetPassword'].includes(operationId)?'204':'200']:{description:'Successful response',...(response?json(response):{})},'400':error,'401':error,'403':error,...extra}};
 }
 const optionalText=max=>({type:['string','null'],maxLength:max});
 const schemas={
@@ -31,6 +31,8 @@ schemas.ActivityPage=object({items:{type:'array',items:ref('AuditEvent')},page:{
 const paging=[{name:'page',in:'query',schema:{type:'integer',minimum:0,maximum:10000,default:0}},{name:'size',in:'query',schema:{type:'integer',minimum:1,maximum:50,default:12}}];
 const paths={
  '/auth/me':{get:operation('session','Returns the current account and a CSRF token. Creates an anonymous session when signed out.','get',ref('Session'))},
+ '/auth/forgot-password':{post:operation('forgotPassword','Generic response for all addresses. Sends to verified accounts only, at most once per minute. SMTP failure returns 503.','post',object({message:{type:'string'}}),object({email:{type:'string',format:'email',maxLength:254}}),[write],{'429':error,'503':error})},
+ '/auth/reset-password':{post:operation('resetPassword','Consumes a single-use six-digit reset code with ten-minute expiry and five attempts; resets password, revokes all sessions and records a security event. Does not sign in. Verification codes cannot reset passwords.','post',null,object({email:{type:'string',format:'email',maxLength:254},code:{type:'string',pattern:'^[0-9]{6}$'},newPassword:{type:'string',minLength:10,maxLength:72}}),[write],{'429':error})},
  '/auth/profile':{put:operation('updateProfile','Updates the signed-in display name. Email cannot be changed here.','put',ref('Account'),object({name:{type:'string',minLength:1,maxLength:80}}),[write])},
  '/auth/change-password':{post:operation('changePassword','Requires current password. Changes the password, revokes all sessions and pending resets, and records an account security event. Sign in again afterwards.','post',null,object({currentPassword:{type:'string',maxLength:72},newPassword:{type:'string',minLength:10,maxLength:72}}),[write],{'429':error})},
  '/auth/logout-all':{post:operation('logoutAll','Revokes every session, including the current one, using a credential version checked on authenticated API requests.','post',null,null,[write],{'429':error})},

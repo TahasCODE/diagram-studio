@@ -1,5 +1,12 @@
 # Diagram Studio API contract
 
+POST `/auth/forgot-password` accepts `{email}` and returns a generic acknowledgement;
+only verified accounts receive reset mail. POST `/auth/reset-password` accepts
+`{email,code,newPassword}` and returns 204 after consuming the reset code, replacing
+the password, revoking all sessions and recording a security event. Reset codes
+use the same expiry, attempt and resend limits as verification codes, with separate
+purposes. Both endpoints require CSRF and are rate limited. No automatic sign-in.
+
 Account Settings endpoints: PUT `/auth/profile` accepts `{name}` and returns the
 updated account. POST `/auth/change-password` accepts `{currentPassword,newPassword}`
 and returns 204, revoking all sessions and pending resets. POST `/auth/logout-all`
