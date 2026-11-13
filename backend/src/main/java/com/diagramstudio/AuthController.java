@@ -46,11 +46,13 @@ public class AuthController {
     private final AccountCodes codes;
     private final EmailVerification verification;
     private final AccountSecurity security;
+    private final PasswordRecovery recovery;
 
-    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts, AccountCodes codes, EmailVerification verification, AccountSecurity security) {
+    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts, AccountCodes codes, EmailVerification verification, AccountSecurity security, PasswordRecovery recovery) {
         this.jdbc = jdbc; this.passwords = passwords; this.contexts = contexts;
         this.codes=codes; this.verification=verification;
         this.security=security;
+        this.recovery=recovery;
     }
 
     @GetMapping("/me")
@@ -132,6 +134,22 @@ public class AuthController {
         @Override public String toString(){return "ChangePassword[credentials=REDACTED]";}
     }
     public record Profile(@NotBlank @Size(max=80) String name) {}
+    public record ResetPassword(@NotBlank @Email @Size(max=254) String email,
+                                @NotBlank @jakarta.validation.constraints.Pattern(regexp="[0-9]{6}") String code,
+                                @NotBlank @Size(min=10,max=72) String newPassword) {
+        @Override public String toString(){return "ResetPassword[credentials=REDACTED]";}
+    }
+    @PostMapping("/forgot-password")
+    Map<String,String> forgotPassword(@Valid @RequestBody EmailRequest form){
+        recovery.request(form.email().trim().toLowerCase(Locale.ROOT));
+        return Map.of("message","If a verified account exists for this email, a password reset code has been sent. Check your inbox and spam folder.");
+    }
+    @PostMapping("/reset-password") @ResponseStatus(HttpStatus.NO_CONTENT)
+    void resetPassword(@Valid @RequestBody ResetPassword form,Authentication auth,HttpServletRequest request,HttpServletResponse response){
+        if(!recovery.reset(form.email().trim().toLowerCase(Locale.ROOT),form.code(),form.newPassword()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"The code is invalid or expired. Request a new code if needed.");
+        logout(request,response,auth);
+    }
     @PostMapping("/change-password") @ResponseStatus(HttpStatus.NO_CONTENT)
     void changePassword(@Valid @RequestBody ChangePassword form,Authentication auth,HttpServletRequest request,HttpServletResponse response){
         security.changePassword(UUID.fromString(auth.getName()),form.currentPassword(),form.newPassword());

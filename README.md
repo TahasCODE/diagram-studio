@@ -15,6 +15,10 @@ After signing in, open your name in the header for **Account Settings**. You can
 edit your display name, change your password, review recent security activity or
 sign out every device. Password changes sign out all sessions; local diagrams remain.
 
+Use **Forgot Password?** to recover a verified account through email. To run with
+real Gmail delivery, use `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-gmail.ps1`
+after creating a Google App Password; the launcher prompts without saving it.
+
 For request tracing, Problem Details, operational metrics, rate limiting,
 transactional audit, pagination/search, production profiles and Java integration
 tests, see [backend/README.md](backend/README.md). The account flow is now explicit:

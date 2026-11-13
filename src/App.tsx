@@ -39,6 +39,13 @@ function initialProject() {
 }
 const initial = initialProject();
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+const authViews={
+  login:{title:'Sign In to Diagram Studio',description:'Sign in to save private projects, publish diagrams, and recover previous versions.',action:'Sign In'},
+  register:{title:'Create Your Account',description:'Create an account and verify your email to secure your private workspace.',action:'Create Account'},
+  verify:{title:'Verify Your Email',description:'Enter the six-digit code from your inbox. It expires in 10 minutes. Check spam if it has not arrived.',action:'Verify Email'},
+  forgot:{title:'Forgot Your Password?',description:'Enter your verified account email. We will send a six-digit code to help you choose a new password.',action:'Send Reset Code'},
+  reset:{title:'Reset Your Password',description:'Enter your reset code and choose a new password. The code expires in 10 minutes. All sessions will be signed out.',action:'Reset Password'},
+};
 
 export default function App() {
   const [history, dispatch] = useReducer(historyReducer, { past: [], present: initial.document, future: [] });
@@ -67,7 +74,7 @@ export default function App() {
   const [revisionLoading, setRevisionLoading] = useState(false);
   const [revisionError, setRevisionError] = useState('');
   const [revisionPreview, setRevisionPreview] = useState<Revision | null>(null);
-  const [authMode, setAuthMode] = useState<'login'|'register'|'verify'>('login');
+  const [authMode, setAuthMode] = useState<'login'|'register'|'verify'|'forgot'|'reset'>('login');
   const [resendAt, setResendAt] = useState(0);
   const [authError, setAuthError] = useState('');
   const [authMessage, setAuthMessage] = useState('');
@@ -170,6 +177,15 @@ export default function App() {
     const mode = authMode;
     try {
       await session();
+      if(mode==='forgot') {
+        const result=await request<{message:string}>('/auth/forgot-password','POST',{email:form.get('email')});
+        setAuthMode('reset');setAuthMessage(result.message);setResendAt(Date.now()+60000);return;
+      }
+      if(mode==='reset') {
+        if(form.get('password')!==form.get('confirmPassword'))throw new Error('The new passwords do not match.');
+        await request('/auth/reset-password','POST',{email:form.get('email'),code:form.get('code'),newPassword:form.get('password')});
+        formElement.reset();setAuthMode('login');setUser(null);setActive(null);setAuthMessage('Password reset successfully. All sessions have been signed out. Sign in with your new password.');return;
+      }
       if(mode==='verify') {
         await request('/auth/verify-email','POST',{email:form.get('email'),code:form.get('code')});
         formElement.reset(); setAuthMode('login'); setAuthMessage('Email verified successfully. Sign in to continue.'); return;
@@ -191,7 +207,7 @@ export default function App() {
   }
   async function resendVerification() {
     setBusy(true);setAuthError('');
-    try { await session();const result=await request<{message:string}>('/auth/resend-verification','POST',{email:authEmail});setAuthMessage(result.message);setResendAt(Date.now()+60000); }
+    try { await session();const result=await request<{message:string}>(authMode==='reset'?'/auth/forgot-password':'/auth/resend-verification','POST',{email:authEmail});setAuthMessage(result.message);setResendAt(Date.now()+60000); }
     catch(error){setAuthError(errorMessage(error));}finally{setBusy(false);}
   }
   async function saveOnline(copy = false): Promise<Draft | null> {
@@ -334,24 +350,27 @@ export default function App() {
 
     {modal === 'confirm' && confirmDetails && <Dialog title={confirmDetails.title} onClose={() => setModal(null)}><p className="dialog-copy">{confirmDetails.message}</p><div className="actions"><button className="primary" onClick={() => { setModal(null); confirmDetails.action(); }}>Continue</button><button onClick={() => setModal(null)}>Cancel</button></div></Dialog>}
     {modal==='account'&&user&&<AccountSettings account={user} onClose={()=>setModal(null)} onProfile={setUser} onSignedOut={message=>{setUser(null);setActive(null);setAuthMode('login');setAuthError('');setAuthMessage(message);setAuthSuccess(null);setModal('auth');}} onSignOut={()=>confirm('Sign Out','Sign out of this browser? Your local diagram will remain on this device.',async()=>{setBusy(true);try{await request('/auth/logout','POST');await session();setUser(null);setActive(null);setNotice('Signed out. Your local diagram remains on this device.');}catch(error){setNotice(errorMessage(error));}finally{setBusy(false);}})}/>}
-    {modal === 'auth' && <Dialog title={authSuccess?'You’re Signed In':authMode==='verify'?'Verify Your Email':authMode==='login'?'Sign In to Diagram Studio':'Create Your Account'} onClose={() => {if(!busy)setModal(null);}}>
+    {modal === 'auth' && <Dialog title={authSuccess?'You’re Signed In':authViews[authMode].title} onClose={() => {if(!busy)setModal(null);}}>
       {authSuccess ? <div className="auth-success" role="status"><span className="auth-success-icon"><Icon name="check" size={28}/></span><h3>Welcome back, {authSuccess.name.split(' ')[0]}.</h3><p>You’re securely signed in as <strong>{authSuccess.email}</strong>. Your saved projects and version history are ready.</p><button className="primary" onClick={() => {setModal(null);setAuthSuccess(null);}}>Continue to Workspace<Icon name="right" size={16}/></button></div> : <>
-        <p className="dialog-copy">{authMode==='verify'?'Enter the code from your inbox. It expires in 10 minutes. Check spam if it has not arrived.':authMode==='login'?'Sign in to save private projects, publish diagrams, and recover previous versions.':'Create an account and verify your email to secure your private workspace.'}</p>
+        <p className="dialog-copy">{authViews[authMode].description}</p>
         {authMessage && <div className="auth-created" role="status"><Icon name="check" size={18}/><p>{authMessage}</p></div>}
         <form onSubmit={authenticate} aria-busy={busy}>
           <fieldset disabled={busy}>
             {authMode==='register' && <><label htmlFor="account-name">Your Name</label><input id="account-name" name="name" autoComplete="name" maxLength={80} required/></>}
             <label htmlFor="email">Email Address</label><input id="email" name="email" type="email" autoComplete="username" maxLength={254} value={authEmail} onChange={e => setAuthEmail(e.target.value)} required/>
-            {authMode==='verify'?<><label htmlFor="verification-code">Verification Code</label><input id="verification-code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} placeholder="000000" required/></>:<><label htmlFor="password">Password</label><input key={authMode} id="password" name="password" type="password" autoComplete={authMode==='login'?'current-password':'new-password'} minLength={authMode==='register'?10:undefined} maxLength={72} required/></>}
-            {authMode==='register' && <p className="hint">Use at least 10 characters (maximum 72 UTF-8 bytes).</p>}
+            {(authMode==='verify'||authMode==='reset')&&<><label htmlFor="verification-code">{authMode==='reset'?'Reset Code':'Verification Code'}</label><input id="verification-code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} placeholder="000000" required/></>}
+            {authMode!=='verify'&&authMode!=='forgot'&&<><label htmlFor="password">{authMode==='reset'?'New Password':'Password'}</label><input key={authMode} id="password" name="password" type="password" autoComplete={authMode==='login'?'current-password':'new-password'} minLength={authMode!=='login'?10:undefined} maxLength={72} required/></>}
+            {authMode==='reset'&&<><label htmlFor="reset-confirm">Confirm New Password</label><input id="reset-confirm" name="confirmPassword" type="password" autoComplete="new-password" minLength={10} maxLength={72} required/></>}
+            {(authMode==='register'||authMode==='reset') && <p className="hint">Use at least 10 characters (maximum 72 UTF-8 bytes).</p>}
             {authError && <p className="form-error" role="alert">{authError}</p>}
-            <button className="primary" disabled={busy} type="submit">{busy&&<span className="loading-spinner" aria-hidden="true"/>}{busy?'Please Wait…':authMode==='verify'?'Verify Email':authMode==='login'?'Sign In':'Create Account'}</button>
+            <button className="primary" disabled={busy} type="submit">{busy&&<span className="loading-spinner" aria-hidden="true"/>}{busy?'Please Wait…':authViews[authMode].action}</button>
           </fieldset>
-          {busy && <p className="auth-progress" role="status">{authMode==='login'?'Verifying your credentials and establishing a secure session…':'Creating your account securely…'}</p>}
+          {busy && <p className="auth-progress" role="status">Processing your request securely…</p>}
         </form>
-        {authMode==='verify'&&<button className="text-button" disabled={busy} onClick={() => {if(Date.now()<resendAt){setAuthMessage('Wait 60 seconds between code requests. Your latest code is still valid.');return;}void resendVerification();}}>Resend Verification Code</button>}
+        {(authMode==='verify'||authMode==='reset')&&<button className="text-button" disabled={busy} onClick={() => {if(Date.now()<resendAt){setAuthMessage('Wait 60 seconds between code requests. Your latest code is still valid.');return;}void resendVerification();}}>{authMode==='reset'?'Resend Reset Code':'Resend Verification Code'}</button>}
+        {authMode==='login'&&<button className="text-button" disabled={busy} onClick={()=>{setAuthMode('forgot');setAuthError('');setAuthMessage('');}}>Forgot Password?</button>}
         {authMode==='login'&&<button className="text-button" disabled={busy} onClick={()=>{setAuthMode('verify');setAuthMessage('Enter your email and request a code if you have not received one.');setAuthError('');}}>Need to Verify Your Email?</button>}
-        <button className="text-button" disabled={busy} onClick={() => {setAuthMode(authMode==='login'?'register':'login');setAuthError('');setAuthMessage('');}}>{authMode==='login'?'New here? Create an Account':'Already registered? Sign In'}</button>
+        <button className="text-button" disabled={busy} onClick={() => {setAuthMode(authMode==='login'?'register':'login');setAuthError('');setAuthMessage('');}}>{authMode==='login'?'New here? Create an Account':'Back to Sign In'}</button>
       </>}
     </Dialog>}
     {modal === 'projects' && <Dialog title="My Projects" onClose={() => {if(!busy)setModal(null);}}><p className="dialog-copy">Your private drafts. Publishing creates a separate public snapshot.</p>{projectListLoading && <p role="status">Loading Projects…</p>}{projectListError && <p className="form-error" role="alert">{projectListError}</p>}{!projectListLoading&&!projectListError&&!projects.length&&<p className="hint">{appliedProjectQuery?"No projects match your search.":"No projects yet. Close this window and choose Save Online."}</p>}

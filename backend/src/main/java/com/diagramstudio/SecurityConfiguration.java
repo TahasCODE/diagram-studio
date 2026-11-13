@@ -48,6 +48,7 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/me", "/api/auth/login", "/api/auth/register", "/api/health").permitAll()
                 .requestMatchers("/api/auth/verify-email", "/api/auth/resend-verification").permitAll()
+                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                 .requestMatchers(HttpMethod.GET,"/api/openapi.json","/api/docs").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/publications/*").permitAll()
                 .requestMatchers("/api/**").authenticated()

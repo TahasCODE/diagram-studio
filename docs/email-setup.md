@@ -12,6 +12,17 @@ finish. Password-change and profile events contain no password or code data.
 
 ## Gmail
 
+The simplest local launcher prompts for both the sender and its App Password:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-gmail.ps1
+```
+
+Stop any existing Diagram Studio server first. The launcher keeps credentials in
+the process environment while the server runs and restores the previous environment
+afterwards. It does not write credentials to disk. The sender must have Google
+2-Step Verification and an App Password configured. The manual alternative follows.
+
 Enable Google 2-Step Verification and create an App Password for the sender account.
 Set these variables in the terminal that starts the application:
 
@@ -52,3 +63,13 @@ Codes expire after ten minutes, are bcrypt hashed, allow five guesses, and are
 consumed atomically. Resends have a database-backed 60-second cooldown and replace
 the prior code. Auth endpoints also have a per-IP limit. Resend replies are generic
 for all addresses. Registration retains the duplicate-email 409 response.
+
+## Password recovery
+
+Choose **Forgot Password?** from Sign In. Enter the verified account email, then
+the reset code and a new password. Unknown and unverified emails receive the same
+acknowledgement without a reset email. A reset code expires after ten minutes and
+five guesses, is purpose-bound and single-use. Resending replaces it after the
+60-second cooldown. Successful recovery revokes every session and records a
+`PASSWORD_RESET` security event; it does not sign in automatically. Email
+verification codes cannot reset a password. SMTP failures return 503.

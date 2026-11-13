@@ -56,6 +56,35 @@ test('account settings updates a profile, changes password and preserves the loc
   await expect(page.getByText('Password Changed',{exact:true})).toBeVisible();
 });
 
+test('forgot password sends a code, rejects a wrong code and recovers the account',async({page})=>{
+  const email=`recovery-${crypto.randomUUID()}@example.test`;
+  await page.goto('/');await page.locator('#sign-in').click();
+  await page.getByRole('button',{name:'New here? Create an Account'}).click();
+  await page.getByLabel('Your Name').fill('Recovery Tester');await page.getByLabel('Email Address').fill(email);
+  await page.getByLabel('Password',{exact:true}).fill('ForgottenPassword123');
+  await page.getByRole('button',{name:'Create Account',exact:true}).click();
+  await expect(page.getByLabel('Verification Code',{exact:true})).toBeVisible();
+  const initial=await (await page.request.get('http://127.0.0.1:8025/messages?to='+encodeURIComponent(email))).json();
+  await page.getByLabel('Verification Code',{exact:true}).fill(initial.at(-1).code);
+  await page.getByRole('button',{name:'Verify Email',exact:true}).click();
+  await page.getByRole('button',{name:'Forgot Password?',exact:true}).click();
+  await page.getByRole('button',{name:'Send Reset Code',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Reset Your Password',exact:true})).toBeVisible();
+  const mail=await (await page.request.get('http://127.0.0.1:8025/messages?to='+encodeURIComponent(email))).json();
+  const code=mail.at(-1).code;
+  await page.getByLabel('Reset Code',{exact:true}).fill(code==='000000'?'111111':'000000');
+  await page.getByLabel('New Password',{exact:true}).fill('RecoveredPassword456');
+  await page.getByLabel('Confirm New Password',{exact:true}).fill('RecoveredPassword456');
+  await page.getByRole('button',{name:'Reset Password',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('invalid or expired');
+  await page.getByLabel('Reset Code',{exact:true}).fill(code);
+  await page.getByRole('button',{name:'Reset Password',exact:true}).click();
+  await expect(page.getByText('Password reset successfully.',{exact:false})).toBeVisible();
+  await page.getByLabel('Password',{exact:true}).fill('RecoveredPassword456');
+  await page.getByRole('dialog').getByRole('button',{name:'Sign In',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'You’re Signed In'})).toBeVisible();
+});
+
 test('migrates a prototype project and preserves editing, review, history, import and export', async ({page}) => {
   await page.addInitScript(document => localStorage.setItem('diagram-studio-v1',JSON.stringify(document)), {...examples.refund,title:'Existing Prototype Project'});
   const errors: string[] = []; page.on('pageerror',error => errors.push(error.message));
