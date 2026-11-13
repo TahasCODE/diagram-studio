@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { examples } from '../src/lib/examples';
+import { parseDiagram } from '../src/lib/model';
 async function signInAfterRegistration(page: Page,password: string) {
   await expect(page.getByText('Account created successfully.',{exact:false})).toBeVisible();
   const email=await page.getByLabel('Email Address').inputValue();
@@ -124,6 +125,7 @@ test('migrates a prototype project and preserves editing, review, history, impor
 });
 
 test('registers, saves in PostgreSQL, publishes immutable playback, and remixes in a fresh browser', async ({page,browser}) => {
+  test.setTimeout(90000);
   const title = 'Browser Project '+crypto.randomUUID().slice(0,8);
   await page.goto('/');
   await page.getByRole('tab',{name:'Editor',exact:true}).click();
@@ -147,10 +149,14 @@ test('registers, saves in PostgreSQL, publishes immutable playback, and remixes 
   await page.getByRole('button',{name:'Close Dialog'}).click();
   await page.getByRole('tab',{name:'Editor',exact:true}).click();
   await page.locator('#project-title').fill(title+' Edited'); await page.locator('#project-title').press('Tab');
+  await page.locator('#label').fill('Edited draft entry');await page.locator('#label').press('Tab');
   await page.locator('#save-online').click(); await expect(page.locator('#save-state')).toHaveText('Saved Online');
   const readerContext = await browser.newContext();
   const reader = await readerContext.newPage();
   await reader.goto(url);
+  expect((await (await reader.request.get(new URL('/api/auth/me',url).href)).json()).user).toBeNull();
+  const publicationPath=new URL('/api/publications/'+new URL(url).pathname.split('/').at(-1),url).href;
+  const snapshot=await (await reader.request.get(publicationPath)).json();
   await expect(reader.locator('#project-heading')).toHaveText(title);
   await expect(reader.locator('#editor')).toHaveCount(0);
   await reader.locator('#next').click(); await expect(reader.locator('#step')).toContainText('2 / 3');
@@ -159,6 +165,13 @@ test('registers, saves in PostgreSQL, publishes immutable playback, and remixes 
   await reader.getByRole('tab',{name:'Editor',exact:true}).click();
   await expect(reader.locator('#editor')).toBeVisible();
   await expect(reader.locator('#project-title')).toHaveValue(title);
+  await reader.locator('#project-title').fill(title+' Guest Remix');await reader.locator('#project-title').press('Tab');
+  await reader.locator('#label').fill('Guest remix entry');await reader.locator('#label').press('Tab');
+  await expect(reader.locator('#project-heading')).toHaveText(title+' Guest Remix');
+  await reader.reload();await reader.getByRole('tab',{name:'Editor',exact:true}).click();
+  await expect(reader.locator('#project-title')).toHaveValue(title+' Guest Remix');
+  await expect(reader.locator('#label')).toHaveValue('Guest remix entry');
+  expect((await (await reader.request.get(publicationPath)).json()).document).toEqual(snapshot.document);
   await readerContext.close();
   await page.locator('#my-projects').click();
   await expect(page.locator('.project-list')).toContainText(title+' Edited');
@@ -179,6 +192,17 @@ test('registers, saves in PostgreSQL, publishes immutable playback, and remixes 
   await page.getByRole('button',{name:'Preview Version 3',exact:true}).click();
   await expect(page.locator('.revision-preview')).toContainText(title+' Edited');
   await page.getByRole('button',{name:'Close Dialog'}).click();
+  // Restore a revision different from the published content: restoring the original
+  // alone could miss an implementation that accidentally rewrites a publication.
+  await page.locator('#version-history').click();
+  await page.getByRole('button',{name:'Restore Version 3',exact:true}).click();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await expect(page.locator('#project-heading')).toHaveText(title+' Edited');
+  const afterRestoreContext=await browser.newContext();const afterRestore=await afterRestoreContext.newPage();
+  await afterRestore.goto(url);await expect(afterRestore.locator('#project-heading')).toHaveText(title);
+  expect((await (await afterRestore.request.get(publicationPath)).json()).document).toEqual(snapshot.document);
+  await afterRestore.locator('#next').click();await expect(afterRestore.locator('#step')).toContainText('2 / 3');
+  await afterRestoreContext.close();
   await page.locator('#project-activity').click();
   await expect(page.locator('.activity-list')).toContainText('Project Restored');
   await page.getByRole('button',{name:'Close Dialog'}).click();
@@ -204,7 +228,8 @@ test('desktop canvas remains readable and responds to keyboard playback', async 
   await page.screenshot({path:'.runtime/desktop-light.png',fullPage:true});
 });
 
-test('keeps local edits after a real version conflict and saves a separate copy', async ({page}) => {
+test('keeps stale-tab edits through a conflict and reload, then saves an independent recovery copy', async ({page,context}) => {
+  test.setTimeout(90000);
   await page.goto('/');
   await page.locator('#sign-in').click();
   await page.getByRole('button',{name:'New here? Create an Account'}).click();
@@ -216,19 +241,38 @@ test('keeps local edits after a real version conflict and saves a separate copy'
   await page.locator('#save-online').click();
   await expect(page.locator('#save-state')).toHaveText('Saved Online');
   const metadata = await page.evaluate(() => JSON.parse(localStorage.getItem('diagram-studio-v1-cloud')!));
-  const stored = await (await page.request.get('/api/projects/'+metadata.id)).json();
-  const auth = await (await page.request.get('/api/auth/me')).json();
-  const changed = await page.request.put('/api/projects/'+metadata.id,{headers:{'X-CSRF-TOKEN':auth.csrfToken},data:{version:stored.version,document:{...stored.document,title:'Changed in Another Session'}}});
-  expect(changed.status()).toBe(200);
+  const stale=await context.newPage();await stale.bringToFront();await stale.goto('/');
+  await expect(stale.getByRole('button',{name:'Account Settings',exact:true})).toBeVisible();
+  await stale.locator('#my-projects').click();await stale.getByRole('button',{name:'Open',exact:true}).click();
+  if(await stale.getByRole('heading',{name:'Open Project',exact:true}).isVisible())await stale.getByRole('button',{name:'Continue',exact:true}).click();
+  await expect(stale.locator('#save-state')).toHaveText('Saved Online');
+  await page.bringToFront();
   await page.getByRole('tab',{name:'Editor',exact:true}).click();
-  await page.locator('#project-title').fill('Keep My Local Changes');
-  await page.locator('#project-title').press('Tab');
+  await page.locator('#project-title').fill('Changed in Another Session');await page.locator('#project-title').press('Tab');
   await page.locator('#save-online').click();
-  await expect(page.getByRole('alert')).toContainText('another session');
-  await expect(page.locator('#project-heading')).toHaveText('Keep My Local Changes');
-  await page.getByRole('button',{name:'Save as Separate Copy'}).click();
   await expect(page.locator('#save-state')).toHaveText('Saved Online');
-  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('diagram-studio-v1-cloud')!));
+  const winner=await (await page.request.get('/api/projects/'+metadata.id)).json();
+  await stale.bringToFront();
+  await stale.getByRole('tab',{name:'Editor',exact:true}).click();
+  await stale.locator('#project-title').fill('Keep My Local Changes');await stale.locator('#project-title').press('Tab');
+  await stale.locator('#label').fill('Stale tab entry');await stale.locator('#label').press('Tab');
+  const unsaved=await stale.evaluate(()=>JSON.parse(localStorage.getItem('diagram-studio-v1')!));
+  const rejected=stale.waitForResponse(r=>r.url().endsWith('/api/projects/'+metadata.id)&&r.request().method()==='PUT');
+  await stale.locator('#save-online').click();expect((await rejected).status()).toBe(409);
+  await expect(stale.getByRole('alert')).toContainText('another session');
+  await expect(stale.locator('#project-heading')).toHaveText('Keep My Local Changes');
+  expect((await (await page.request.get('/api/projects/'+metadata.id)).json()).document).toEqual(winner.document);
+  await stale.reload();await expect(stale.locator('#project-heading')).toHaveText('Keep My Local Changes');
+  await expect(stale.locator('#save-online')).toBeEnabled();
+  const rejectedAfterReload=stale.waitForResponse(r=>r.url().endsWith('/api/projects/'+metadata.id)&&r.request().method()==='PUT');
+  await stale.locator('#save-online').click();expect((await rejectedAfterReload).status()).toBe(409);
+  await stale.getByRole('button',{name:'Save as Separate Copy'}).click();
+  await expect(stale.locator('#save-state')).toHaveText('Saved Online');
+  const after = await stale.evaluate(() => JSON.parse(localStorage.getItem('diagram-studio-v1-cloud')!));
   expect(after.id).not.toBe(metadata.id);
-  expect((await (await page.request.get('/api/projects/'+metadata.id)).json()).document.title).toBe('Changed in Another Session');
+  const recovered=await (await stale.request.get('/api/projects/'+after.id)).json();
+  expect(parseDiagram(recovered.document)).toEqual(parseDiagram(unsaved));
+  const original=await (await page.request.get('/api/projects/'+metadata.id)).json();
+  expect(original.document).toEqual(winner.document);expect(original.version).toBe(winner.version);
+  await stale.close();
 });

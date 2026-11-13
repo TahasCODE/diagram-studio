@@ -23,6 +23,10 @@ is `/?walkthrough=cache-outage` on any future deployment; no public demo is depl
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, pull request and verification
 workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new changes.
 
+For the verified publication, revision and concurrent-save design, see
+[the engineering story](docs/engineering-story.md), including an interview-ready
+decision and steps to reproduce the two-tab recovery flow.
+
 Account creation requires an email code. Configure [Gmail SMTP or the local test
 mailbox](docs/email-setup.md) before registering an account.
 

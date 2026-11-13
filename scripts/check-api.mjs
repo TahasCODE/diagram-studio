@@ -75,6 +75,11 @@ assert.equal(draft.version,3);checks++;
 assert.equal(draft.document.title,'Integration Refund');checks++;
 assert.equal((await author.send(`/projects/${projectId}/revisions/2`)).document.title,'Edited Draft');checks++;
 assert.equal((await anonymous.send('/publications/'+published.id)).document.title,'Integration Refund');checks++;
+// Restore different content too: returning to the published revision alone cannot
+// prove that a restore leaves the publication independent of the mutable draft.
+draft=await author.send(`/projects/${projectId}/restore`,'POST',{version:draft.version,revisionVersion:2});
+assert.equal(draft.document.title,'Edited Draft');checks++;
+assert.deepEqual((await anonymous.send('/publications/'+published.id)).document,publicBefore.document);checks++;
 const login=client();await login.send('/auth/me');
 await login.send('/auth/login','POST',{email:`author-${unique}@example.test`,password:'WrongPassword'},401);
 await login.send('/auth/login','POST',{email:`author-${unique}@example.test`,password:'IntegrationPassword123'});
