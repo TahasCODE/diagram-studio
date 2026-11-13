@@ -1,6 +1,20 @@
 import { test,expect } from '@playwright/test';
 import { examples } from '../src/lib/examples';
 
+for(const theme of ['dark','light'])test(`restores saved ${theme} theme before the application bundle loads, including refresh`,async({page})=>{
+  // React cannot mount: a theme applied by its effect cannot pass this check.
+  await page.route(/\.(?:js|tsx)(?:\?.*)?$/,route=>new URL(route.request().url()).pathname==='/theme.js'?route.continue():route.abort());
+    await page.addInitScript(value=>localStorage.setItem('diagram-studio-v1-theme',value),theme);
+    await page.goto('/',{waitUntil:'domcontentloaded'});
+    for(let load=0;load<2;load++){
+      await expect(page.locator('html')).toHaveAttribute('data-theme',theme);
+      expect(await page.locator('#root').innerHTML()).toBe('');
+      expect(await page.locator('html').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe(theme==='dark'?'rgb(17, 26, 22)':'rgb(244, 247, 245)');
+      expect(await page.locator('html').evaluate(el=>getComputedStyle(el).colorScheme)).toBe(theme);
+      if(load===0)await page.reload({waitUntil:'domcontentloaded'});
+    }
+});
+
 for(const width of [1440,1024,390])test(`polished workspace remains usable at ${width}px in both themes`,async({page})=>{
   await page.setViewportSize({width,height:width===390?844:1000});
   await page.emulateMedia({reducedMotion:'reduce'});

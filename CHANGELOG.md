@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Apply the saved theme before the application bundle loads to prevent a light flash when refreshing dark mode.
+
 - Keep each tab's unsaved diagram and save version together across refreshes; verify conflict recovery, guest remix persistence and publication independence after restoration.
 
 - Add a guest cache-outage walkthrough with two response choices, explanatory outcomes and restart, using the existing diagram/player model.
