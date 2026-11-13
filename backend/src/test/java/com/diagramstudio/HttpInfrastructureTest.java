@@ -39,6 +39,12 @@ class HttpInfrastructureTest {
         environment.setProperty("spring.datasource.password","configured-example-password");
         assertThrows(IllegalStateException.class,()->check.run(null));
         environment.setProperty("server.servlet.session.cookie.secure","true");
+        assertThrows(IllegalStateException.class,()->check.run(null));
+        environment.setProperty("spring.mail.username","sender@example.com");
+        environment.setProperty("spring.mail.password","fixture-only-password");
+        environment.setProperty("studio.mail.from","sender@example.com");
+        environment.setProperty("spring.mail.properties.mail.smtp.auth","true");
+        environment.setProperty("spring.mail.properties.mail.smtp.starttls.required","true");
         assertDoesNotThrow(()->check.run(null));
     }
 }

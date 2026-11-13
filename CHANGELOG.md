@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Require email verification with expiring single-use codes and Gmail SMTP support.
+
 - Add a contribution guide and pull request template for future changes.
 
 ## Initial repository import — 2026-11-12

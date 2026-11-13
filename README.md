@@ -8,6 +8,9 @@ preserved in `legacy/`.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, pull request and verification
 workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new changes.
 
+Account creation requires an email code. Configure [Gmail SMTP or the local test
+mailbox](docs/email-setup.md) before registering an account.
+
 For request tracing, Problem Details, operational metrics, rate limiting,
 transactional audit, pagination/search, production profiles and Java integration
 tests, see [backend/README.md](backend/README.md). The account flow is now explicit:

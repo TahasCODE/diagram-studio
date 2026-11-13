@@ -1,5 +1,12 @@
 # Diagram Studio API contract
 
+Registration sends a six-digit verification code. Correct-password sign-in returns
+403 until verified. POST `/auth/verify-email` accepts `{email,code}` and returns 204
+without signing in. POST `/auth/resend-verification` accepts `{email}`, returns a
+generic message and sends at most once per minute. Codes expire in ten minutes,
+permit five guesses and are single-use. Both endpoints require CSRF. SMTP failure
+returns 503. See `docs/email-setup.md` for sender configuration.
+
 All endpoints are under `/api`. JSON bodies are limited to 1 MB. Errors use
 `{ "message": "human-readable reason" }` with the appropriate HTTP status.
 
