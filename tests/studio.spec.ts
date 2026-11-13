@@ -105,10 +105,14 @@ test('migrates a prototype project and preserves editing, review, history, impor
   await page.locator('#duplicate-scenario').click();
   await expect(page.locator('#scenario')).toHaveValue('3');
   const node = page.getByRole('button',{name:'Review request',exact:true});
+  const paths=()=>page.locator('#lines path').evaluateAll(elements=>elements.map(el=>el.getAttribute('d')));
+  const beforeDrag=await paths();
   const bounds = await node.boundingBox();
   await page.mouse.move(bounds!.x+bounds!.width/2,bounds!.y+bounds!.height/2);
   await page.mouse.down(); await page.mouse.move(bounds!.x+bounds!.width/2+45,bounds!.y+bounds!.height/2-30,{steps:8}); await page.mouse.up();
+  await expect.poll(paths).not.toEqual(beforeDrag);
   await page.locator('#undo').click();
+  await expect.poll(paths).toEqual(beforeDrag);
   await page.getByRole('tab',{name:'Playback',exact:true}).click();
   await page.locator('#next').click(); await expect(page.locator('#progress')).toHaveAttribute('value','2');
   await page.locator('#restart').click();

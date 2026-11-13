@@ -21,7 +21,7 @@ export function Canvas(props:Props){
   useEffect(()=>{const observer=new ResizeObserver(entries=>{const bounds=entries[0].contentRect;setSize({width:Math.max(1,bounds.width),height:Math.max(1,bounds.height)});});if(board.current)observer.observe(board.current);return()=>observer.disconnect();},[]);
   const nodeWidth=Math.min(UI.nodeWidth,Math.max(UI.nodeMinWidth,size.width*UI.nodeRatio));
   const nodeHeight=viewport.width<500?UI.mobileNodeHeight:UI.nodeHeight;
-  const nodes=props.document.nodes.map(n=>position?.id===n.id?{...n,x:position.x,y:position.y}:n);
+  const nodes=useMemo(()=>position?props.document.nodes.map(n=>position.id===n.id?{...n,x:position.x,y:position.y}:n):props.document.nodes,[props.document.nodes,position]);
   const path=props.document.scenarios[props.scenario]?.steps||[];
   useEffect(()=>{
     if(viewport.width>=size.width||zoom!==1)return;
@@ -42,16 +42,22 @@ export function Canvas(props:Props){
     for(const edge of edges.values()){if(!outgoing.has(edge.from))outgoing.set(edge.from,new Set());outgoing.get(edge.from)!.add(edge.to);incoming.add(edge.to);}
     return {edges,outgoing,incoming};
   },[props.document.scenarios]);
-  const boxes:Box[]=nodes.map(n=>({id:n.id,x:n.x*size.width/100,y:n.y*size.height/100,width:nodeWidth,height:nodeHeight}));
-  const byId=new Map(boxes.map(b=>[b.id,b]));
+  const boxes:Box[]=useMemo(()=>nodes.map(n=>({id:n.id,x:n.x*size.width/100,y:n.y*size.height/100,width:nodeWidth,height:nodeHeight})),[nodes,size.width,size.height,nodeWidth,nodeHeight]);
   const activeEdges=new Set(path.slice(1,props.step+1).map((to,i)=>JSON.stringify([path[i],to])));
-  const routes=[...graph.edges].map(([key,edge],index)=>({key,edge,...routeConnection(byId.get(edge.from)!,byId.get(edge.to)!,boxes,index)}));
-  const occupiedLabels:Box[]=[];
-  const labels=routes.filter(route=>(graph.outgoing.get(route.edge.from)?.size||0)>1).map(route=>{
-    const label=route.edge.scenarios[0],text=label.length>23?label.slice(0,22)+'…':label,width=text.length*6+16;
-    const point=placeConnectionLabel(route.points,boxes,width,size,occupiedLabels);
-    occupiedLabels.push({id:route.key,...point,width,height:22});return {...route,text,width,...point};
-  });
+  // Playback changes path highlighting, not geometry. Re-route only when the
+  // graph, node positions or viewport changes (including during a node drag).
+  const routes=useMemo(()=>{
+    const byId=new Map(boxes.map(b=>[b.id,b]));
+    return [...graph.edges].map(([key,edge],index)=>({key,edge,...routeConnection(byId.get(edge.from)!,byId.get(edge.to)!,boxes,index)}));
+  },[graph,boxes]);
+  const labels=useMemo(()=>{
+    const occupiedLabels:Box[]=[];
+    return routes.filter(route=>(graph.outgoing.get(route.edge.from)?.size||0)>1).map(route=>{
+      const label=route.edge.scenarios[0],text=label.length>23?label.slice(0,22)+'…':label,width=text.length*6+16;
+      const point=placeConnectionLabel(route.points,boxes,width,size,occupiedLabels);
+      occupiedLabels.push({id:route.key,...point,width,height:22});return {...route,text,width,...point};
+    });
+  },[routes,graph,boxes,size.width,size.height]);
   const fit=()=>{
     if(!boxes.length){setZoom(1);setPan({x:0,y:0});return;}
     const left=Math.min(...boxes.map(b=>b.x-b.width/2)),right=Math.max(...boxes.map(b=>b.x+b.width/2));

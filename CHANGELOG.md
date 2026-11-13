@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add reproducible 100/500-node playback benchmarks, align the project limit at 500 nodes, and reuse connector geometry between playback steps based on profiling.
+
 - Apply the saved theme before the application bundle loads to prevent a light flash when refreshing dark mode.
 
 - Keep each tab's unsaved diagram and save version together across refreshes; verify conflict recovery, guest remix persistence and publication independence after restoration.
