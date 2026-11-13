@@ -8,6 +8,26 @@ concurrency:
   group: verify-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  windows-startup:
+    runs-on: windows-2025
+    timeout-minutes: 8
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Windows database lifecycle
+        shell: powershell
+        run: |
+          if (!(Test-Path "$env:PGBIN/initdb.exe")) { throw 'PostgreSQL binaries are missing from this runner.' }
+          $env:PATH = "$env:PGBIN;$env:PATH"
+          & ./scripts/check-windows-startup.ps1
+      - name: Preserve startup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-startup-reports
+          if-no-files-found: ignore
+          path: .runtime/*.log
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
