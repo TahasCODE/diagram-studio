@@ -18,9 +18,19 @@ import type { Account, Draft, ProjectSummary, Publication, PublicationSummary, R
 const remix = new URLSearchParams(location.search).has('remix');
 const localKey = STORAGE_KEY + (remix ? '-remix' : '');
 const cloudKey = localKey + '-cloud';
+const tabKey = localKey + '-tab';
 const publicationId = location.pathname.match(/^\/p\/([a-f0-9-]{36})\/?$/i)?.[1];
 const walkthroughMode=!publicationId&&new URLSearchParams(location.search).get('walkthrough')==='cache-outage';
 interface CloudDraft { id: string; version: number; ownerId: string; savedJson: string }
+// Keep the document and its optimistic-lock base together across this tab's reloads.
+// Shared localStorage alone can pair a stale edit with another tab's newer version.
+function readTabDraft(): {document: Diagram; active: CloudDraft | null} | null {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(tabKey) || 'null');
+    return cached ? {document:parseDiagram(cached.document),active:cached.active ?? null} : null;
+  } catch { return null; }
+}
+const tabDraft = readTabDraft();
 function initialProject() {
   let message = '';
   if(walkthroughMode)return {document:structuredClone(cacheWalkthrough),shared:true,message};
@@ -28,6 +38,7 @@ function initialProject() {
     try { return { document: parseDiagram(JSON.parse(decodeURIComponent(location.hash.slice(1)))), shared: true, message }; }
     catch { message = 'This old playback link is invalid. Your local workspace is shown instead.'; }
   }
+  if (tabDraft) return {document:tabDraft.document,shared:false,message};
   try {
     const raw = localStorage.getItem(localKey);
     if (raw) {
@@ -113,7 +124,7 @@ export default function App() {
       setUser(account); setApiOnline(true);
       if (account && !readOnly) {
         try {
-          const cached = JSON.parse(localStorage.getItem(cloudKey) || 'null');
+          const cached = tabDraft ? tabDraft.active : JSON.parse(localStorage.getItem(cloudKey) || 'null');
           if (cached?.ownerId === account.id && typeof cached.id === 'string' && Number.isSafeInteger(cached.version) && typeof cached.savedJson === 'string') setActive(cached);
         } catch { /* Keep the local document usable if workspace metadata is unavailable. */ }
       }
@@ -141,6 +152,11 @@ export default function App() {
     if (readOnly) return;
     try { if (active) localStorage.setItem(cloudKey,JSON.stringify(active)); else if (sessionReady) localStorage.removeItem(cloudKey); } catch { /* Local save status covers storage availability. */ }
   }, [active, readOnly, sessionReady]);
+  useEffect(() => {
+    if (readOnly || !sessionReady) return;
+    try { sessionStorage.setItem(tabKey,JSON.stringify({document,active})); }
+    catch { setLocalSaved(false); }
+  }, [document, active, readOnly, sessionReady]);
   useEffect(() => {
     globalThis.document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     try { localStorage.setItem(STORAGE_KEY+'-theme',dark ? 'dark' : 'light'); } catch { /* Theme is still applied for this visit. */ }
@@ -261,6 +277,7 @@ export default function App() {
       const next = parseDiagram(draft.document);
       const source = {id:draft.id,version:draft.version,ownerId:user!.id,savedJson:JSON.stringify(next)};
       if (readOnly) {
+        sessionStorage.setItem(STORAGE_KEY+'-tab',JSON.stringify({document:next,active:source}));
         localStorage.setItem(STORAGE_KEY,JSON.stringify(next)); localStorage.setItem(STORAGE_KEY+'-cloud',JSON.stringify(source)); location.assign('/'); return;
       }
       openDocument(next,source); setModal(null);
@@ -310,6 +327,7 @@ export default function App() {
         source = {id:draft.id,version:draft.version,ownerId:user.id,savedJson:JSON.stringify(remixed)};
       }
       localStorage.setItem(STORAGE_KEY+'-remix',JSON.stringify(next));
+      sessionStorage.setItem(STORAGE_KEY+'-remix-tab',JSON.stringify({document:next,active:source}));
       if (source) localStorage.setItem(STORAGE_KEY+'-remix-cloud',JSON.stringify(source)); else localStorage.removeItem(STORAGE_KEY+'-remix-cloud');
       location.assign('/?remix=1');
     } catch(error) { setNotice(errorMessage(error)); } finally { setBusy(false); }

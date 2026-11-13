@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep each tab's unsaved diagram and save version together across refreshes; verify conflict recovery, guest remix persistence and publication independence after restoration.
+
 - Add a guest cache-outage walkthrough with two response choices, explanatory outcomes and restart, using the existing diagram/player model.
 
 - Redesign the workspace with a shared light/dark design system, responsive inspector, polished graph routing, zoom/minimap controls and accessible notifications.
