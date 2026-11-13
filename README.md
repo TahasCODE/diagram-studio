@@ -5,6 +5,15 @@ private drafts, publish fixed playback snapshots, and let readers explore or
 remix those snapshots without an account. The original standalone prototype is
 preserved in `legacy/`.
 
+**[Open the local walkthrough](http://localhost:8090/?walkthrough=cache-outage)**
+— no account needed. Start it on Windows with `npm.cmd start` and wait for the
+server to finish starting. **A public app demo has not been deployed yet.**
+
+[85-second demo script, case study and verified CV bullets](docs/portfolio.md)
+· [Deployment and post-deploy checks](docs/deployment.md)
+
+![Guest walkthrough at the cache failure, showing PostgreSQL fallback and temporary-error choices](docs/assets/cache-outage.png)
+
 ## Try the standout walkthrough
 
 **[What happens when the cache goes down?](http://localhost:8090/?walkthrough=cache-outage)**
@@ -49,8 +58,8 @@ Node, Java 25, Maven, and PostgreSQL are required on this computer.
 From this folder:
 
 ```powershell
-npm install
-npm start
+npm.cmd install
+npm.cmd start
 ```
 
 Open **http://localhost:8090** after the server reports that it has started.
@@ -100,7 +109,8 @@ use PostgreSQL or `docker compose up db`, then `cd backend && ./mvnw spring-boot
 
 1. Open an example or build a diagram. Local edits save automatically in this
    browser, with undo/redo, branching scenarios, node notes, and review flags.
-2. Create an account using **Sign In → Create an Account**. No seeded accounts or
+2. Create an account using **Sign In → Create an Account**, verify the email code,
+   then sign in. No seeded accounts or
    administrator password are shipped.
 3. Choose **Save Online**. Projects in PostgreSQL appear under **My Projects** and
    can be opened from another browser after signing in. Online saves are explicit;

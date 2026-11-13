@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:api": "node scripts/check-api.mjs",
+    "test:release": "node scripts/check-release.mjs",
     "bench:fixtures": "node scripts/playback-fixtures.mjs",
     "bench:playback": "node scripts/benchmark-playback.mjs",
     "backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backend.ps1",

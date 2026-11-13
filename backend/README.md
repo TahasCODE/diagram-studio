@@ -113,8 +113,11 @@ in a rolled-back request; its logged SQL error is expected test evidence.
 
 The GitHub Actions workflow builds TypeScript, runs frontend and Java tests with
 an isolated PostgreSQL service, checks generated OpenAPI drift, runs API/browser
-regressions and uploads diagnostic reports. It is configured in the repository;
-no hosted CI run is claimed until this project is pushed and the workflow runs.
+regressions and uploads diagnostic reports. Hosted runs have passed on the public
+repository's merged release-preparation
+PRs; see GitHub Actions for each actual commit. Release checks also exercise the
+packaged frontend routes/assets and build/start the non-root Docker image. This
+does not establish a public app deployment. See [the deployment guide](../docs/deployment.md).
 
 ## Accurate resume positioning
 
@@ -126,7 +129,9 @@ Explain those design decisions and the tests that establish them. Do not claim
 traffic, latency, uptime, compliance, distributed operation or cloud deployment
 without measurements and an actual deployment.
 
-Email verification/recovery, real-time collaboration, distributed tracing,
+Email verification and password recovery are implemented and tested using the
+local SMTP sink; see [email setup](../docs/email-setup.md). Real production inbox
+delivery must be verified separately on the chosen host. Real-time collaboration, distributed tracing,
 centralized log collection and a hosted Prometheus/Grafana service remain future
 integrations. The existing 15-page PDF documents the earlier application snapshot;
 these engineering notes describe the subsequent backend additions.

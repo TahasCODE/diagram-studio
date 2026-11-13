@@ -37,6 +37,21 @@ test('guest discovers the walkthrough, chooses both outcomes and restarts withou
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('diagram-studio-v1')!))).toEqual(saved);
   await page.getByRole('link',{name:'Back to Workspace',exact:true}).click();
   await expect(page.locator('#project-heading')).toHaveText(saved.title);
+  // Rehearse the portfolio demo's guest remix/export ending without an account.
+  await page.getByRole('link',{name:/FEATURED WALKTHROUGH/}).click();
+  await page.getByRole('button',{name:'Remix Diagram',exact:true}).click();
+  await expect(page).toHaveURL(/\?remix=1/);
+  await page.getByRole('tab',{name:'Editor',exact:true}).click();
+  await page.locator('#project-title').fill('My cache failure flow');await page.locator('#project-title').press('Tab');
+  await expect(page.locator('#project-heading')).toHaveText('My cache failure flow');
+  await page.getByRole('tab',{name:'Project',exact:true}).click();
+  const downloadPromise=page.waitForEvent('download');await page.locator('#export-project').click();
+  const stream=await (await downloadPromise).createReadStream();
+  let exported='';for await(const chunk of stream!)exported+=chunk.toString();
+  const copy=JSON.parse(exported);
+  expect(copy.project.title).toBe('My cache failure flow');expect(copy.project.nodes).toHaveLength(8);
+  expect(copy.project.scenarios).toHaveLength(2);
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('diagram-studio-v1')!))).toEqual(saved);
 });
 
 test('a guest on mobile sees an obvious start and can complete the temporary-error branch',async({page})=>{

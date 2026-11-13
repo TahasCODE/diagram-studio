@@ -17,7 +17,7 @@ services:
   app:
     build: .
     ports:
-      - "8090:8090"
+      - "127.0.0.1:8090:8090"
     environment:
       DB_URL: jdbc:postgresql://db:5432/diagram_studio
       DB_USER: diagram
@@ -27,6 +27,13 @@ services:
       STUDIO_OPS_USERNAME: ${STUDIO_OPS_USERNAME:-metrics}
       STUDIO_OPS_PASSWORD: ${STUDIO_OPS_PASSWORD:-}
       MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-127.0.0.1}
+      MAIL_HOST: ${MAIL_HOST:-127.0.0.1}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-studio@localhost.test}
+      MAIL_AUTH: ${MAIL_AUTH:-false}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
     depends_on:
       db:
         condition: service_healthy
