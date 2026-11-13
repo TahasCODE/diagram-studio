@@ -36,7 +36,7 @@ try {
     } finally { if (Test-Path $passwordPath) { Remove-Item -LiteralPath $passwordPath } }
   }
   # TCP readiness works even when another Windows user launched the server.
-  & (Join-Path $pgBin 'pg_isready.exe') -h 127.0.0.1 -p 55432 -t 2 -q
+  & (Join-Path $pgBin 'pg_isready.exe') -h 127.0.0.1 -p 55432 -U diagram -d postgres -t 2 -q
   if ($LASTEXITCODE -ne 0) {
     # pg_ctl detaches correctly and appends logs rather than truncating an active log.
     & (Join-Path $pgBin 'pg_ctl.exe') -D $dataPath -l (Join-Path $runtimePath 'postgres-server.log') -o '-p 55432 -h 127.0.0.1' -w -t 30 start
