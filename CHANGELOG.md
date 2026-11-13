@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Show incorrect-current-password errors beneath the field, focus it for correction and clear the error while editing.
+
 - Fix competing Windows database launches, preserve startup logs and recheck connectivity after builds; add Windows lifecycle CI.
 
 - Add password recovery through email codes and a secure local Gmail SMTP launcher.

@@ -245,6 +245,7 @@ fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
 
 .account-section { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 20px; }
 .account-section h3 { margin: 0 0 12px; font-size: 15px; font-weight: 650; }
+.account-section input[aria-invalid="true"] { border-color: var(--danger); }
 .account-identity { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
 .account-identity strong { overflow-wrap: anywhere; font-size: 13px; }
 .verified-badge { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--line-strong); border-radius: 20px; padding: 4px 9px; font-size: 10px; font-weight: 650; }
