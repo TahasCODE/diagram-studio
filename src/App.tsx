@@ -9,6 +9,7 @@ import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
 import { Icon } from './components/Icon';
 import { examples } from './lib/examples';
+import { CACHE_CHOICE_STEP,cacheWalkthrough } from './lib/cacheWalkthrough';
 import { exportProject, historyReducer, parseDiagram, publishedDocument, readProjectFile, STORAGE_KEY } from './lib/model';
 import type { Diagram } from './lib/model';
 import { ApiError, request, saveProject, session } from './lib/api';
@@ -18,9 +19,11 @@ const remix = new URLSearchParams(location.search).has('remix');
 const localKey = STORAGE_KEY + (remix ? '-remix' : '');
 const cloudKey = localKey + '-cloud';
 const publicationId = location.pathname.match(/^\/p\/([a-f0-9-]{36})\/?$/i)?.[1];
+const walkthroughMode=!publicationId&&new URLSearchParams(location.search).get('walkthrough')==='cache-outage';
 interface CloudDraft { id: string; version: number; ownerId: string; savedJson: string }
 function initialProject() {
   let message = '';
+  if(walkthroughMode)return {document:structuredClone(cacheWalkthrough),shared:true,message};
   if (location.hash) {
     try { return { document: parseDiagram(JSON.parse(decodeURIComponent(location.hash.slice(1)))), shared: true, message }; }
     catch { message = 'This old playback link is invalid. Your local workspace is shown instead.'; }
@@ -54,6 +57,8 @@ export default function App() {
   const [scenarioState, setScenario] = useState(0);
   const scenario = Math.min(scenarioState, document.scenarios.length-1);
   const [stepState, setStep] = useState(0);
+  const [walkthroughStarted,setWalkthroughStarted]=useState(false);
+  const [walkthroughChosen,setWalkthroughChosen]=useState(false);
   const step = Math.max(0, Math.min(stepState, document.scenarios[scenario].steps.length-1));
   const [selected, setSelected] = useState<string | undefined>(document.nodes[0]?.id);
   const [user, setUser] = useState<Account | null>(null);
@@ -101,6 +106,7 @@ export default function App() {
   const cloudDirty = active ? active.savedJson !== JSON.stringify(document) : true;
 
   useEffect(() => {
+    if(walkthroughMode){setSessionReady(true);return;}
     let cancelled = false;
     session().then(account => {
       if (cancelled) return;
@@ -146,6 +152,11 @@ export default function App() {
   }, [localSaved,readOnly]);
 
   const onScenario = (index: number) => { setScenario(index); setStep(0); };
+  const goToStep=useCallback((index:number)=>{
+    if(walkthroughMode&&!walkthroughStarted)return;
+    const last=walkthroughMode&&!walkthroughChosen?CACHE_CHOICE_STEP:document.scenarios[scenario].steps.length-1;
+    setStep(Math.max(0,Math.min(last,index)));
+  },[walkthroughStarted,walkthroughChosen,document.scenarios,scenario]);
   const edit = (fn: (draft: Diagram) => void) => {
     const next = structuredClone(documentRef.current); fn(next);
     try { dispatch({type:'edit',document:parseDiagram(next)}); } catch(error) { setNotice(errorMessage(error)); }
@@ -166,10 +177,10 @@ export default function App() {
       return;
     }
     if (event.altKey || event.shiftKey) return;
-    if (event.key === 'ArrowLeft') { event.preventDefault(); setStep(Math.max(0,step-1)); }
-    if (event.key === 'ArrowRight') { event.preventDefault(); setStep(Math.max(0,Math.min(document.scenarios[scenario].steps.length-1,step+1))); }
+    if (event.key === 'ArrowLeft') { event.preventDefault(); goToStep(step-1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); goToStep(step+1); }
     if (event.key === 'Home') { event.preventDefault(); setStep(0); }
-  }, [readOnly,step,scenario,document.scenarios]);
+  }, [readOnly,step,scenario,document.scenarios,goToStep]);
   useEffect(() => { window.addEventListener('keydown',onKey); return () => window.removeEventListener('keydown',onKey); }, [onKey]);
 
   async function authenticate(event: FormEvent<HTMLFormElement>) {
@@ -326,10 +337,10 @@ export default function App() {
   if (viewerLoading || viewerError) return <div className="page-state"><h1>Diagram Studio</h1><p role="status">{viewerLoading ? 'Loading Published Diagram…' : viewerError}</p>{viewerError && <a href="/">Open Your Workspace</a>}{viewerLoading&&<div aria-hidden="true"><div className="skeleton"/><div className="skeleton"/><div className="skeleton"/></div>}</div>;
 
   return <>
-    <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length}
-      readOnly={readOnly} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
+    <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={walkthroughMode&&!walkthroughChosen?'Read request · Cache outage':document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length} initialInspectorOpen={walkthroughMode}
+      readOnly={readOnly} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
       onProjects={loadProjects} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
-      saveLabel={readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
+      saveLabel={walkthroughMode?'Guest Walkthrough':readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
       headerActions={<>
         {user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Account Settings" onClick={() => setModal('account')}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>}
         {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : <button id="save-online" title="Save Online (Ctrl/Cmd+S)" aria-label="Save Online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
@@ -341,7 +352,13 @@ export default function App() {
       </>}
       sidebar={<>
         <div id="panel-playback" role="tabpanel" aria-labelledby="tab-playback" hidden={panel!=='playback'}>
-          <Playback document={document} scenario={scenario} step={step} readOnly={readOnly} onScenario={onScenario} onStep={setStep}/>
+          {!walkthroughMode&&<a className="walkthrough-entry" href="/?walkthrough=cache-outage"><span className="section-overline">FEATURED WALKTHROUGH</span><strong>What happens when the cache goes down?</strong><span>Make the call at a Redis failure. Two outcomes. No account needed. <Icon name="right" size={14}/></span></a>}
+          <Playback document={document} scenario={scenario} step={step} readOnly={readOnly} onScenario={onScenario} onStep={goToStep} guided={walkthroughMode?{
+            started:walkthroughStarted,chosen:walkthroughChosen,choiceStep:CACHE_CHOICE_STEP,
+            onStart:()=>{setWalkthroughStarted(true);setStep(0);},
+            onChoose:index=>{setScenario(index);setWalkthroughChosen(true);setStep(CACHE_CHOICE_STEP+1);},
+            onRestart:()=>{setScenario(0);setStep(0);setWalkthroughChosen(false);setWalkthroughStarted(false);},
+          }:undefined}/>
           <div className="panel-note"><Icon name="branch" size={16}/><p>Each scenario follows a different path through the same diagram.</p></div>
         </div>
         {!readOnly && <>
