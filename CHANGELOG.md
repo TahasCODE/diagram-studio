@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Redesign the workspace with a shared light/dark design system, responsive inspector, polished graph routing, zoom/minimap controls and accessible notifications.
+
 - Show incorrect-current-password errors beneath the field, focus it for correction and clear the error while editing.
 
 - Fix competing Windows database launches, preserve startup logs and recheck connectivity after builds; add Windows lifecycle CI.

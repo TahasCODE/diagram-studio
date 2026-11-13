@@ -1,6 +1,10 @@
-export type IconName = 'diagram' | 'play' | 'edit' | 'folder' | 'file' | 'sun' | 'moon' | 'save' | 'share' | 'undo' | 'redo' | 'left' | 'right' | 'restart' | 'plus' | 'trash' | 'copy' | 'upload' | 'download' | 'arrange' | 'branch' | 'check' | 'close' | 'logout' | 'user' | 'external' | 'history' | 'chevron';
+export type IconName = 'diagram' | 'play' | 'edit' | 'folder' | 'file' | 'sun' | 'moon' | 'save' | 'share' | 'undo' | 'redo' | 'left' | 'right' | 'restart' | 'plus' | 'trash' | 'copy' | 'upload' | 'download' | 'arrange' | 'branch' | 'check' | 'close' | 'logout' | 'user' | 'external' | 'history' | 'chevron' | 'minus' | 'fit' | 'sliders' | 'info';
 import type { ReactNode } from 'react';
 const paths: Record<IconName, ReactNode> = {
+  info:<><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></>,
+  minus:<path d="M4 12h16"/>,
+  fit:<><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></>,
+  sliders:<><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="var(--surface)"/><circle cx="15" cy="12" r="2" fill="var(--surface)"/><circle cx="9" cy="18" r="2" fill="var(--surface)"/></>,
   diagram: <><rect x="3" y="3" width="6" height="6" rx="1.4"/><rect x="15" y="15" width="6" height="6" rx="1.4"/><path d="M6 9v9h9M9 6h9v9"/></>,
   play: <path d="m9 5 11 7-11 7V5Z"/>,
   edit: <><path d="m15 5 4 4M4 20l5-1L21 7a2.8 2.8 0 0 0-4-4L5 15l-1 5Z"/></>,
@@ -30,6 +34,6 @@ const paths: Record<IconName, ReactNode> = {
   history: <><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6m2-3v6l4 2"/></>,
   chevron: <path d="m9 5 7 7-7 7"/>,
 };
-export function Icon({name, size=18}: {name: IconName; size?: number}) {
-  return <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+export function Icon({name, size=20}: {name: IconName; size?: number}) {
+  return <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }

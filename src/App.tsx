@@ -62,7 +62,9 @@ export default function App() {
   const [active, setActive] = useState<CloudDraft | null>(null);
   const [localSaved, setLocalSaved] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState(initial.message);
+  const [notice, setNoticeText] = useState(initial.message);
+  const [noticeVersion,setNoticeVersion]=useState(0);
+  const setNotice=useCallback((message:string)=>{setNoticeText(message);setNoticeVersion(value=>value+1);},[]);
   const [cloudError, setCloudError] = useState('');
   const [viewerLoading, setViewerLoading] = useState(!!publicationId);
   const [viewerError, setViewerError] = useState('');
@@ -311,17 +313,27 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(url),1000); setNotice('Project file exported.');
   };
 
-  if (viewerLoading || viewerError) return <div className="page-state"><h1>Diagram Studio</h1><p role="status">{viewerLoading ? 'Loading Published Diagram…' : viewerError}</p>{viewerError && <a href="/">Open Your Workspace</a>}</div>;
+  useEffect(()=>{
+    const saveShortcut=(event:KeyboardEvent)=>{
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){
+        event.preventDefault();if(readOnly||globalThis.document.querySelector('dialog[open]'))return;
+        (globalThis.document.activeElement as HTMLElement)?.blur();setTimeout(()=>{void saveClick();},0);
+      }
+    };
+    window.addEventListener('keydown',saveShortcut);return()=>window.removeEventListener('keydown',saveShortcut);
+  },[busy,user,readOnly,active]);
+
+  if (viewerLoading || viewerError) return <div className="page-state"><h1>Diagram Studio</h1><p role="status">{viewerLoading ? 'Loading Published Diagram…' : viewerError}</p>{viewerError && <a href="/">Open Your Workspace</a>}{viewerLoading&&<div aria-hidden="true"><div className="skeleton"/><div className="skeleton"/><div className="skeleton"/></div>}</div>;
 
   return <>
     <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length}
       readOnly={readOnly} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
       onProjects={loadProjects} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
-      saveLabel={readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice}
+      saveLabel={readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
       headerActions={<>
         {user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Account Settings" onClick={() => setModal('account')}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>}
-        {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : <button id="save-online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
-        <button id="share" className="primary" disabled={busy||!sessionReady} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':'Publish & Share'}</button>
+        {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : <button id="save-online" title="Save Online (Ctrl/Cmd+S)" aria-label="Save Online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
+        <button id="share" title={readOnly?'Share Diagram':'Publish & Share'} className="primary" disabled={busy||!sessionReady} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':'Publish & Share'}</button>
       </>}
       banners={<>
         {!apiOnline && <div className="app-banner" role="status">Project storage is offline. Your local workspace is available.<button onClick={() => {session().then(account => {setUser(account);setApiOnline(true);}).catch(() => setNotice('Project storage is still unavailable.'));}}>Reconnect</button></div>}
