@@ -5,6 +5,21 @@ private drafts, publish fixed playback snapshots, and let readers explore or
 remix those snapshots without an account. The original standalone prototype is
 preserved in `legacy/`.
 
+## Try the standout walkthrough
+
+**[What happens when the cache goes down?](http://localhost:8090/?walkthrough=cache-outage)**
+follows a read request through an API, Redis and PostgreSQL. Start the walkthrough,
+advance to the cache failure, then choose a database fallback or a temporary error.
+Each path explains who gets data, what extra work happens, and the tradeoff.
+Restart to try the other choice. No account is required and your local draft is
+preserved. This is an illustrative explanation, not a live Redis outage or a
+benchmark; the example 50 ms budget is explicitly illustrative.
+
+Start the app using the instructions below, then open the link. The same entry is
+featured in the app's Playback inspector. For Vite development, use
+`http://localhost:5173/?walkthrough=cache-outage`. The walkthrough's relative path
+is `/?walkthrough=cache-outage` on any future deployment; no public demo is deployed yet.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, pull request and verification
 workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new changes.
 

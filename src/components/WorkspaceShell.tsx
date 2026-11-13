@@ -8,10 +8,12 @@ interface Props {
   panel: Panel; onPanel: (panel: Panel) => void; onProjects: () => void; onHistory: () => void;
   canHistory: boolean; version?: number; busy: boolean; saveLabel: string; saveError: boolean;
   headerActions: ReactNode; sidebar: ReactNode; banners: ReactNode; children: ReactNode; notice: string; noticeVersion:number;
+  initialInspectorOpen?:boolean;
+  walkthrough?:boolean;
 }
 export function WorkspaceShell(props: Props) {
   const [compact,setCompact]=useState(()=>matchMedia('(max-width:1023px)').matches);
-  const [inspectorOpen,setInspectorOpen]=useState(false);
+  const [inspectorOpen,setInspectorOpen]=useState(()=>!!props.initialInspectorOpen&&matchMedia('(max-width:1023px)').matches);
   const [toast,setToast]=useState(props.notice);
   const [toastPaused,setToastPaused]=useState(false),[toastLeaving,setToastLeaving]=useState(false);
   const inspector=useRef<HTMLElement>(null);
@@ -26,7 +28,7 @@ export function WorkspaceShell(props: Props) {
   return <>
     <header className="app-header" inert={compact&&inspectorOpen}>
       <a className="brand" href="/" aria-label="Diagram Studio Home"><span className="brand-mark"><Icon name="diagram" size={21}/></span><h1>Diagram Studio</h1></a>
-      <div className="header-divider"/><span className="header-context">{props.readOnly?'Published diagram':props.isRemix?'Remix workspace':'Personal workspace'}</span>
+      <div className="header-divider"/><span className="header-context">{props.walkthrough?'Guided walkthrough':props.readOnly?'Published diagram':props.isRemix?'Remix workspace':'Personal workspace'}</span>
       <div className="actions header-actions"><span id="save-state" className={'save-state'+(props.saveError?' save-error':'')} role="status"><span className="status-dot"/>{props.saveLabel}</span>
         <button id="theme-toggle" className="icon-button" aria-label={props.dark?'Use Light Theme':'Use Dark Theme'} title={props.dark?'Light Theme':'Dark Theme'} aria-pressed={props.dark} onClick={props.onTheme}><Icon name={props.dark?'sun':'moon'}/></button>
         {props.headerActions}
@@ -43,7 +45,7 @@ export function WorkspaceShell(props: Props) {
       </nav>
       <main>
         <div className="workspace" inert={compact&&inspectorOpen} onClick={event=>{if(compact&&(event.target as HTMLElement).closest('.node'))setInspectorOpen(true);}}>
-          <div className="workspace-heading"><div className="workspace-title"><p className="eyebrow">{props.readOnly?'PUBLISHED DIAGRAM':'DIAGRAM WORKSPACE'}</p><h2 id="project-heading">{props.title}</h2><p className="workspace-description"><span className="metadata-chip"><span className="scenario-dot"/>{props.scenarioName}</span><span className="metadata-chip">{props.stepCount} path steps</span><span className="metadata-chip">{props.nodeCount} diagram nodes</span></p></div><span className="canvas-badge"><span/>Live Canvas</span><button className="inspector-trigger" aria-expanded={inspectorOpen} aria-controls="diagram-inspector" onClick={()=>setInspectorOpen(!inspectorOpen)} title="Open Inspector"><Icon name="sliders" size={16}/><span>Inspector</span></button></div>
+          <div className="workspace-heading"><div className="workspace-title"><p className="eyebrow">{props.walkthrough?'INTERACTIVE WALKTHROUGH':props.readOnly?'PUBLISHED DIAGRAM':'DIAGRAM WORKSPACE'}</p><h2 id="project-heading">{props.title}</h2><p className="workspace-description"><span className="metadata-chip"><span className="scenario-dot"/>{props.scenarioName}</span><span className="metadata-chip">{props.stepCount} path steps</span><span className="metadata-chip">{props.nodeCount} diagram nodes</span></p></div><span className="canvas-badge"><span/>{props.walkthrough?'Interactive demo':'Live Canvas'}</span><button className="inspector-trigger" aria-expanded={inspectorOpen} aria-controls="diagram-inspector" onClick={()=>setInspectorOpen(!inspectorOpen)} title="Open Inspector"><Icon name="sliders" size={16}/><span>Inspector</span></button></div>
           {props.children}
           <div className="workspace-footer"><span>{props.nodeCount} nodes<span className="footer-separator"/> {props.scenarioCount} scenarios{props.version && <><span className="footer-separator"/>Version {props.version}</>}</span><span>{props.readOnly?'Read-only playback':'Changes stay local until saved online'}</span></div>
         </div>
@@ -56,7 +58,7 @@ export function WorkspaceShell(props: Props) {
             const first=controls[0],last=controls.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
           }
         }}>
-          <div className="inspector-heading"><span>{props.readOnly?'EXPLORE':'INSPECTOR'}</span><span className="inspector-meta">{props.readOnly?'Shared snapshot':props.version?'Version '+props.version:'Local draft'}</span><button className="icon-button inspector-close" aria-label="Close Inspector" onClick={()=>setInspectorOpen(false)}><Icon name="close"/></button></div>
+          <div className="inspector-heading"><span>{props.readOnly?'EXPLORE':'INSPECTOR'}</span><span className="inspector-meta">{props.walkthrough?'Guest demo':props.readOnly?'Shared snapshot':props.version?'Version '+props.version:'Local draft'}</span><button className="icon-button inspector-close" aria-label="Close Inspector" onClick={()=>setInspectorOpen(false)}><Icon name="close"/></button></div>
           <div className="inspector-tabs" role="tablist" aria-label="Diagram Panels">{tabs.map(tab => <button key={tab.id} id={'tab-'+tab.id} role="tab" aria-selected={props.panel===tab.id} aria-controls={'panel-'+tab.id} tabIndex={props.panel===tab.id?0:-1} onClick={() => props.onPanel(tab.id)} onKeyDown={event => {
             const index=tabs.findIndex(t=>t.id===props.panel); const next=event.key==='ArrowRight'?(index+1)%tabs.length:event.key==='ArrowLeft'?(index+tabs.length-1)%tabs.length:-1;
             if(next>=0){event.preventDefault();event.stopPropagation();props.onPanel(tabs[next].id);globalThis.document.getElementById('tab-'+tabs[next].id)?.focus();}

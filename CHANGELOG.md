@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a guest cache-outage walkthrough with two response choices, explanatory outcomes and restart, using the existing diagram/player model.
+
 - Redesign the workspace with a shared light/dark design system, responsive inspector, polished graph routing, zoom/minimap controls and accessible notifications.
 
 - Show incorrect-current-password errors beneath the field, focus it for correction and clear the error while editing.
