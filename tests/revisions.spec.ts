@@ -17,10 +17,12 @@ test('compares a saved revision with unsaved edits without saving, then handles 
   await api('/auth/login','POST',{email,password});
   const original:Diagram={title:'Read flow',nodes:[{id:'a',label:'API',x:16,y:25},{id:'b',label:'Redis',x:50,y:25},{id:'c',label:'PostgreSQL',x:82,y:65}],scenarios:[{name:'Success',steps:['a','b','c']},{name:'Failure',steps:['a','b']}]};
   const created=await api('/projects','POST',{document:original},201);
+  let cleanupVersion=created.version;
   let completed=false;
   try{
     const saved=structuredClone(original);saved.nodes[0].label='Gateway';
     const server=await api('/projects/'+created.id,'PUT',{version:created.version,document:saved});
+    cleanupVersion=server.version;
     const current=parseDiagram(server.document);current.title='Unsaved read flow';
     current.nodes=[{...current.nodes[0],x:25,notes:'Authenticate first'},current.nodes[2],{id:'d',label:'Fallback handler',x:50,y:65}];
     current.scenarios=[{name:'Success',steps:['a','d','c']},{name:'Fallback',steps:['a','c']}];
@@ -67,7 +69,7 @@ test('compares a saved revision with unsaved edits without saving, then handles 
     await expect(page.locator('#project-heading')).toHaveText('Read flow');
     completed=true;
   }finally{
-    try{await api('/projects/'+created.id,'DELETE',undefined,204);}
+    try{await api('/projects/'+created.id+'?version='+cleanupVersion,'DELETE',undefined,204);}
     catch(error){
       if(completed)throw error;
       testInfo.annotations.push({type:'cleanup',description:'Could not remove the isolated test project after the test failure.'});
