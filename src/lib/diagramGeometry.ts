@@ -1,6 +1,6 @@
 export interface Point { x:number; y:number }
 export interface Box extends Point { id:string; width:number; height:number }
-export const CANVAS_UI={nodeWidth:160,nodeMinWidth:88,nodeHeight:72,mobileNodeHeight:88,nodeRatio:.2,minPlaneWidth:560,portGap:12,corner:10,zoomStep:.1,minZoom:.5,maxZoom:2,dragThreshold:4,fitPadding:32};
+export const CANVAS_UI={nodeWidth:160,nodeMinWidth:88,nodeHeight:72,mobileNodeHeight:88,nodeRatio:.2,minPlaneWidth:560,portGap:12,corner:10,zoomStep:.1,minZoom:.5,maxZoom:2,dragThreshold:4,fitPadding:32,presentationPlaneHeight:600,presentationMinZoom:.25};
 const segmentHits=(a:Point,b:Point,box:Box)=>{
   const pad=8,left=box.x-box.width/2-pad,right=box.x+box.width/2+pad,top=box.y-box.height/2-pad,bottom=box.y+box.height/2+pad;
   return a.x===b.x?a.x>left&&a.x<right&&Math.max(a.y,b.y)>top&&Math.min(a.y,b.y)<bottom:a.y>top&&a.y<bottom&&Math.max(a.x,b.x)>left&&Math.min(a.x,b.x)<right;
