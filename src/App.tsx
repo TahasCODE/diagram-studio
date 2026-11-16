@@ -413,7 +413,7 @@ export default function App() {
           }:undefined;
   return <>
     <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={walkthroughMode&&!walkthroughChosen?'Read request · Cache outage':document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length} initialInspectorOpen={walkthroughMode}
-      readOnly={readOnly} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
+      readOnly={readOnly} guestDemo={!accountsEnabled} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
       onProjects={()=>accountsEnabled?void loadProjects():setPanel('project')} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
       saveLabel={walkthroughMode?'Guest Walkthrough':readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
       onLogout={user?signOut:undefined}
