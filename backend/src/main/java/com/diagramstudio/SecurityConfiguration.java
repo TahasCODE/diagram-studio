@@ -47,14 +47,10 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers("/api/auth/me", "/api/health").permitAll();
-                if(!accountsEnabled)auth.requestMatchers("/api/auth/**","/api/projects","/api/projects/**").denyAll();
-                auth.requestMatchers("/api/auth/me", "/api/auth/login", "/api/auth/register", "/api/health").permitAll()
-                .requestMatchers("/api/auth/verify-email", "/api/auth/resend-verification").permitAll()
-                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
-                .requestMatchers(HttpMethod.GET,"/api/openapi.json","/api/docs").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/publications/*").permitAll()
-                .requestMatchers("/api/**").authenticated()
-                .anyRequest().permitAll();})
+                if(accountsEnabled)auth.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify-email", "/api/auth/resend-verification", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll();
+                auth.requestMatchers(HttpMethod.GET,"/api/openapi.json","/api/docs","/api/publications/*").permitAll();
+                if(!accountsEnabled)auth.requestMatchers("/api/**").denyAll();
+                auth.requestMatchers("/api/**").authenticated().anyRequest().permitAll();})
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, error) -> {
                     ProblemResponses.write(request,response,401,"Sign in to access your projects.");
