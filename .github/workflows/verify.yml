@@ -110,5 +110,6 @@ jobs:
             test-results/
             .runtime/design-*.png
             .runtime/revision-*.png
+            .runtime/conflict-*.png
             backend.log
             container.log

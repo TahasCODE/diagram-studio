@@ -61,9 +61,9 @@ function Changes<T>({title,changes,label,displayFields}:{title:string;changes:En
   </section>;
 }
 
-export function RevisionComparison({before,after,version,currentVersion,unsaved}:{before:Diagram;after:Diagram;version:number;currentVersion:number;unsaved:boolean}){
+export function RevisionComparison({before,after,version,currentVersion,unsaved,autoFocus=true}:{before:Diagram;after:Diagram;version:number;currentVersion:number;unsaved:boolean;autoFocus?:boolean}){
   const section=useRef<HTMLElement>(null);
-  useEffect(()=>{section.current?.scrollIntoView({block:'start'});section.current?.focus({preventScroll:true});},[version]);
+  useEffect(()=>{if(autoFocus){section.current?.scrollIntoView({block:'start'});section.current?.focus({preventScroll:true});}},[version,autoFocus]);
   const diff=useMemo(()=>compareRevisions(before,after),[before,after]);
   const beforeNames=new Map(before.nodes.map(node=>[node.id,node.label])),afterNames=new Map(after.nodes.map(node=>[node.id,node.label]));
   const pathText=(steps:string[]|undefined,names:Map<string,string>)=>steps?steps.map((id,index)=>`${index+1}. ${names.get(id)||id} [${id}]`).join('\n')||'No steps':'Not present';

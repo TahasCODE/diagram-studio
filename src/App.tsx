@@ -5,6 +5,7 @@ import { Editor } from './components/Editor';
 import { Playback } from './components/Playback';
 import { Dialog } from './components/Dialog';
 import { RevisionComparison } from './components/RevisionComparison';
+import { ConflictRecovery } from './components/ConflictRecovery';
 import { AccountSettings } from './components/AccountSettings';
 import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
@@ -23,6 +24,7 @@ const tabKey = localKey + '-tab';
 const publicationId = location.pathname.match(/^\/p\/([a-f0-9-]{36})\/?$/i)?.[1];
 const walkthroughMode=!publicationId&&new URLSearchParams(location.search).get('walkthrough')==='cache-outage';
 interface CloudDraft { id: string; version: number; ownerId: string; savedJson: string }
+interface Recovery {source:CloudDraft;base:Diagram;local:Diagram;server:Draft}
 // Keep the document and its optimistic-lock base together across this tab's reloads.
 // Shared localStorage alone can pair a stale edit with another tab's newer version.
 function readTabDraft(): {document: Diagram; active: CloudDraft | null} | null {
@@ -83,11 +85,15 @@ export default function App() {
   const [noticeVersion,setNoticeVersion]=useState(0);
   const setNotice=useCallback((message:string)=>{setNoticeText(message);setNoticeVersion(value=>value+1);},[]);
   const [cloudError, setCloudError] = useState('');
+  const [saveConflict,setSaveConflict]=useState<CloudDraft|null>(null);
+  const [recovery,setRecovery]=useState<Recovery|null>(null);
+  const [recoveryError,setRecoveryError]=useState('');
+  const [recoveryStale,setRecoveryStale]=useState(false);
   const [viewerLoading, setViewerLoading] = useState(!!publicationId);
   const [viewerError, setViewerError] = useState('');
   const readOnly = !!publicationId || initial.shared;
   const [dark, setDark] = useState(() => { try { return localStorage.getItem(STORAGE_KEY+'-theme') === 'dark'; } catch { return false; } });
-  const [modal, setModal] = useState<'account'|'auth'|'projects'|'confirm'|'share'|'history'|'activity'|null>(null);
+  const [modal, setModal] = useState<'account'|'auth'|'projects'|'confirm'|'share'|'history'|'activity'|'recovery'|null>(null);
   const [panel, setPanel] = useState<Panel>('playback');
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
   const [revisionLoading, setRevisionLoading] = useState(false);
@@ -243,18 +249,44 @@ export default function App() {
   async function saveOnline(copy = false): Promise<Draft | null> {
     if (!user) { openAuth(); return null; }
     const snapshot = structuredClone(documentRef.current);
-    const draft = await saveProject(snapshot,copy ? null : active);
+    let draft:Draft;
+    try{draft=await saveProject(snapshot,copy ? null : active);}
+    catch(error){if(!copy&&active&&error instanceof ApiError&&error.status===409)setSaveConflict(active);throw error;}
     setActive({id:draft.id,version:draft.version,ownerId:user.id,savedJson:JSON.stringify(snapshot)});
-    setApiOnline(true); setCloudError('');
+    setApiOnline(true); setCloudError('');setSaveConflict(null);
     return draft;
   }
   async function saveClick(copy = false) {
     if (busy) return;
     if (!user) { openAuth(); return; }
     setBusy(true);
-    try { await saveOnline(copy); setNotice(copy ? 'A separate project copy was saved online.' : 'Project saved online.'); }
-    catch(error) { setCloudError(errorMessage(error)); if (error instanceof ApiError && error.status === 401) setUser(null); }
+    try { await saveOnline(copy);if(copy&&modal==='recovery'){setModal(null);setRecovery(null);} setNotice(copy ? 'A separate project copy was saved online.' : 'Project saved online.'); }
+    catch(error) { setCloudError(errorMessage(error));if(modal==='recovery')setRecoveryError(errorMessage(error)); if (error instanceof ApiError && error.status === 401) setUser(null); }
     finally { setBusy(false); }
+  }
+  async function loadRecovery(){
+    if(busy||!active||!user)return;
+    const source=structuredClone(active),local=structuredClone(documentRef.current);
+    setModal('recovery');setRecovery(null);setRecoveryError('');setRecoveryStale(false);setBusy(true);
+    try{
+      const [base,latest]=await Promise.all([request<Revision>(`/projects/${source.id}/revisions/${source.version}`),request<Draft>('/projects/'+source.id)]);
+      setRecovery({source,local,base:parseDiagram(base.document),server:{...latest,document:parseDiagram(latest.document)}});
+    }catch(error){setRecoveryError(errorMessage(error)+' Your local edits are unchanged. You can cancel or save a separate copy.');}
+    finally{setBusy(false);}
+  }
+  async function saveRecovery(merged:Diagram){
+    if(busy||!recovery||!user||recoveryStale)return;
+    setBusy(true);setRecoveryError('');
+    try{
+      // The fetched snapshot's version is the only allowed write base. Never
+      // update active metadata or replace the local document before success.
+      const draft=await saveProject(merged,{id:recovery.source.id,version:recovery.server.version});
+      openDocument(draft.document,{id:draft.id,version:draft.version,ownerId:user.id,savedJson:JSON.stringify(draft.document)});
+      setSaveConflict(null);setRecovery(null);setModal(null);setNotice(`Conflict resolved and saved as version ${draft.version}. Previous revisions were retained.`);
+    }catch(error){
+      setRecoveryStale(true);
+      setRecoveryError(error instanceof ApiError&&error.status===409?'The server changed again. Your merge was not applied. Refresh the server version and review your choices again.':errorMessage(error)+' Could not confirm this save. Your original local edits remain unchanged; refresh before retrying.');
+    }finally{setBusy(false);}
   }
   async function loadProjects() {
     if (!user) { openAuth(); return; }
@@ -376,7 +408,7 @@ export default function App() {
       </>}
       banners={<>
         {!apiOnline && <div className="app-banner" role="status">Project storage is offline. Your local workspace is available.<button onClick={() => {session().then(account => {setUser(account);setApiOnline(true);}).catch(() => setNotice('Project storage is still unavailable.'));}}>Reconnect</button></div>}
-        {cloudError && <div className="app-banner error-banner" role="alert">{cloudError}<button disabled={busy} onClick={() => saveClick(true)}>Save as Separate Copy</button><button onClick={() => setCloudError('')}>Dismiss</button></div>}
+        {cloudError && <div className="app-banner error-banner" role="alert">{cloudError}{saveConflict&&active?.id===saveConflict.id&&active.version===saveConflict.version&&<button disabled={busy} onClick={()=>void loadRecovery()}>Review Changes</button>}<button disabled={busy} onClick={() => saveClick(true)}>Save as Separate Copy</button><button onClick={() => {setCloudError('');setSaveConflict(null);}}>Dismiss</button></div>}
       </>}
       sidebar={<>
         <div id="panel-playback" role="tabpanel" aria-labelledby="tab-playback" hidden={panel!=='playback'}>
@@ -440,6 +472,9 @@ export default function App() {
     {modal === 'share' && <Dialog title="Share This Diagram" onClose={() => setModal(null)}><p className="dialog-copy">Anyone with this link can explore the snapshot and remix it. Your private draft stays separate.</p><label htmlFor="playback-link">Playback Link</label><input id="playback-link" value={shareUrl} readOnly onFocus={e => e.currentTarget.select()}/><div className="actions"><button className="primary" onClick={() => copyLink(shareUrl)}>Copy Link</button><a className="button-link" href={shareUrl} target="_blank" rel="noreferrer">Open Playback ↗</a></div>
       {publications.length>1 && <><h3>Published Snapshots</h3><ul className="publication-list">{publications.map((p,i) => <li key={p.id}><a href={'/p/'+p.id} target="_blank" rel="noreferrer">{i===0?'Latest Snapshot':p.title} · {new Date(p.createdAt).toLocaleString()}</a></li>)}</ul></>}
       <p className="hint">{location.hostname==='localhost'||location.hostname==='127.0.0.1'?'This is a local address. Deploy the application before sharing it with someone on another computer.':'Publishing another version creates a new link. Existing snapshots stay unchanged.'}</p>
+    </Dialog>}
+    {modal==='recovery'&&<Dialog title="Resolve Save Conflict" className="revision-dialog conflict-dialog" onClose={()=>{if(!busy){setModal(null);setRecovery(null);}}}>
+      {!recovery?<><p role="status">{busy?'Loading the shared base and latest server version…':'Your local draft has not been changed.'}</p>{recoveryError&&<p role="alert" className="form-error">{recoveryError}</p>}<div className="conflict-footer"><button disabled={busy} onClick={()=>void loadRecovery()}>Try Again</button><button disabled={busy} onClick={()=>void saveClick(true)}>Save as Separate Copy</button><button disabled={busy} onClick={exportFile}>Download Local Backup</button><button disabled={busy} onClick={()=>setModal(null)}>Cancel</button></div></>:<ConflictRecovery key={recovery.server.version} base={recovery.base} local={recovery.local} server={recovery.server.document} baseVersion={recovery.source.version} serverVersion={recovery.server.version} busy={busy} stale={recoveryStale} error={recoveryError} onSave={merged=>void saveRecovery(merged)} onRefresh={()=>void loadRecovery()} onCancel={()=>{setModal(null);setRecovery(null);}} onCopy={()=>void saveClick(true)} onBackup={exportFile}/>}
     </Dialog>}
     {modal === 'history' && <Dialog title="Version History" className="revision-dialog" onClose={() => {if(!busy)setModal(null);}}>
       <p className="dialog-copy">Every online save keeps a recoverable version. Restoring an older version creates a new one; it never rewrites history or changes published links.</p>
