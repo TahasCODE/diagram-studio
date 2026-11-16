@@ -77,7 +77,7 @@ export default function App() {
   const [walkthroughChosen,setWalkthroughChosen]=useState(false);
   const step = Math.max(0, Math.min(stepState, document.scenarios[scenario].steps.length-1));
   const [selected, setSelected] = useState<string | undefined>(document.nodes[0]?.id);
-  const [accountsEnabled,setAccountsEnabled]=useState(true);
+  const [accountsEnabled,setAccountsEnabled]=useState(false);
   const [user, setUser] = useState<Account | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [apiOnline, setApiOnline] = useState(true);
@@ -413,7 +413,7 @@ export default function App() {
           }:undefined;
   return <>
     <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={walkthroughMode&&!walkthroughChosen?'Read request · Cache outage':document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length} initialInspectorOpen={walkthroughMode}
-      readOnly={readOnly} guestDemo={!accountsEnabled} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
+      readOnly={readOnly} guestDemo={sessionReady&&apiOnline&&!accountsEnabled} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
       onProjects={()=>accountsEnabled?void loadProjects():setPanel('project')} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
       saveLabel={walkthroughMode?'Guest Walkthrough':readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
       onLogout={user?signOut:undefined}
@@ -423,7 +423,7 @@ export default function App() {
         <button id="share" title={readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'} className="primary" disabled={busy||!sessionReady} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'}</button>
       </>}
       banners={<>
-        {!accountsEnabled&&<div className="app-banner" role="status">Guest Demo: edits save in this browser. Accounts, online saving and permanent publishing are unavailable. Export JSON to keep a backup.</div>}
+        {sessionReady&&apiOnline&&!accountsEnabled&&<div className="app-banner" role="status">Guest Demo: edits save in this browser. Accounts, online saving and permanent publishing are unavailable. Export JSON to keep a backup.</div>}
         {!readOnly&&document.scenarios.some(s=>s.review?.length)&&<div className="app-banner impact-banner" role="status"><span>{document.scenarios.filter(s=>s.review?.length).length} scenario{document.scenarios.filter(s=>s.review?.length).length===1?'':'s'} need review after node edits.</span><button onClick={()=>{setPanel('editor');setTimeout(()=>globalThis.document.getElementById('scenario-impact')?.scrollIntoView({block:'start'}),200);}}>Review Scenario Impact</button></div>}
         {!apiOnline && <div className="app-banner" role="status">Project storage is offline. Your local workspace is available.<button onClick={() => {session().then(account => {setAccountsEnabled(accountFeaturesEnabled());setUser(account);setApiOnline(true);}).catch(() => setNotice('Project storage is still unavailable.'));}}>Reconnect</button></div>}
         {cloudError && <div className="app-banner error-banner" role="alert">{cloudError}{saveConflict&&active?.id===saveConflict.id&&active.version===saveConflict.version&&<button disabled={busy} onClick={()=>void loadRecovery()}>Review Changes</button>}<button disabled={busy} onClick={() => saveClick(true)}>Save as Separate Copy</button><button onClick={() => {setCloudError('');setSaveConflict(null);}}>Dismiss</button></div>}
