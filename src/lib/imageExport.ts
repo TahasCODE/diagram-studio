@@ -23,8 +23,10 @@ export function diagramSvg(document:Diagram,scenario:number,step:number,options:
 export function downloadBlob(blob:Blob,filename:string){
   const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+// The packaged app permits data: images, but deliberately does not permit blob:
+// image sources. Use the same safe image source for preview and PNG rasterization.
+export const svgImageSource=(svg:string)=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 export async function imageBlob(svg:string,format:'svg'|'png'):Promise<Blob>{
   const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});if(format==='svg')return blob;
-  const url=URL.createObjectURL(blob);
-  try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');canvas.width=SIZE.width*2;canvas.height=SIZE.height*2;const context=canvas.getContext('2d');if(!context)throw new Error('Image export is unavailable in this browser.');context.drawImage(image,0,0,canvas.width,canvas.height);return await new Promise<Blob>((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(new Error('Could not create the PNG.')),'image/png'));}finally{URL.revokeObjectURL(url);}
+  const image=new Image();image.src=svgImageSource(svg);await image.decode();const canvas=document.createElement('canvas');canvas.width=SIZE.width*2;canvas.height=SIZE.height*2;const context=canvas.getContext('2d');if(!context)throw new Error('Image export is unavailable in this browser.');context.drawImage(image,0,0,canvas.width,canvas.height);return await new Promise<Blob>((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(new Error('Could not create the PNG.')),'image/png'));
 }

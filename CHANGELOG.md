@@ -47,3 +47,7 @@ describes that snapshot; it does not imply earlier releases or pull requests.
 ## Diagram images and scenario impact review
 - Added guest-accessible SVG/PNG downloads with preview, transparent backgrounds, light/dark appearance and playback highlighting. No new dependencies.
 - Extended the existing scenario review notes into a discoverable workspace queue, per-path acknowledgement and direct step playback. Existing JSON persistence and publication isolation are reused.
+
+## PNG export decoding fix
+- Reuse the CSP-compatible SVG preview source for PNG rasterization. Keep the packaged image security policy unchanged.
+- Exercise browser image downloads under the image directive read from the backend security configuration.
