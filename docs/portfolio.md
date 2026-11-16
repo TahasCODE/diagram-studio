@@ -2,6 +2,11 @@
 
 ## Demo status and preparation
 
+[Watch the recorded guest demo](https://diagram-studio-demo.onrender.com/demo.html)
+— 86 seconds, silent with English captions and a transcript. The recording uses
+real guest interactions; account-only features are identified as source/test
+capabilities, not demonstrated on the public host.
+
 Repository: https://github.com/TahasCODE/diagram-studio
 
 Local demo: http://localhost:8090/?walkthrough=cache-outage

@@ -1,0 +1,49 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:06.149
+Diagram Studio: explore different outcomes on one technical diagram. No account required.
+
+2
+00:00:06.149 --> 00:00:18.145
+A read request enters the API, then checks Redis before querying PostgreSQL.
+
+3
+00:00:18.145 --> 00:00:24.094
+Redis times out. The reader chooses how the API responds. Timing figures are illustrative.
+
+4
+00:00:24.094 --> 00:00:31.103
+Choice 1: fall back to PostgreSQL. Keep reads available, at the cost of extra database load and latency.
+
+5
+00:00:31.103 --> 00:00:38.103
+The request succeeds with HTTP 200. The notes explain the capacity tradeoff.
+
+6
+00:00:38.103 --> 00:00:43.080
+Reuse the same diagram to explore a different outcome.
+
+7
+00:00:43.080 --> 00:00:50.083
+Choice 2: return HTTP 503. Protect database capacity, but this request fails.
+
+8
+00:00:50.083 --> 00:00:56.070
+A bounded retry with backoff may help later. Uncontrolled retries could make the outage worse.
+
+9
+00:00:56.070 --> 00:01:03.124
+Restart resets the walkthrough and requires a new choice.
+
+10
+00:01:03.124 --> 00:01:14.086
+Remix creates an independent browser-local copy. Edit it without changing the original example.
+
+11
+00:01:14.086 --> 00:01:18.358
+The hosted demo keeps edits in this browser. Export JSON for a portable, editable backup.
+
+12
+00:01:18.358 --> 00:01:26.007
+Full-version account saves, revisions and publications remain in the project and its tests; they are disabled in this hosted guest demo.
