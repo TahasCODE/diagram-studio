@@ -14,6 +14,7 @@ public class ProductionConfigurationCheck implements ApplicationRunner {
         String password=environment.getProperty("spring.datasource.password","");
         if(password.isBlank() || "diagram_local_only".equals(password)) throw new IllegalStateException("Production requires a configured database password; the development password is not allowed.");
         if(!environment.getProperty("server.servlet.session.cookie.secure",Boolean.class,false)) throw new IllegalStateException("Production requires secure cookies and HTTPS. Set COOKIE_SECURE=true.");
+        if(!environment.getProperty("studio.accounts.enabled",Boolean.class,true))return;
         String provider=environment.getProperty("studio.mail.provider","smtp");
         String from=environment.getProperty("studio.mail.from","");
         if(from.isBlank()||from.endsWith(".test"))throw new IllegalStateException("Production requires a real MAIL_FROM address.");

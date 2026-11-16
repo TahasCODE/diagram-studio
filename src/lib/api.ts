@@ -12,6 +12,8 @@ export interface PageResponse<T> { items: T[]; page: number; size: number; total
 export interface AuditEvent { id: number; projectId: string; action: string; version: number | null; createdAt: string; requestId: string | null }
 export class ApiError extends Error { constructor(public status: number, message: string,public requestId?: string) { super(message); } }
 let csrfToken = '';
+let accountsEnabled=true;
+export const accountFeaturesEnabled=()=>accountsEnabled;
 export async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   let response: Response;
   try {
@@ -28,8 +30,9 @@ export async function request<T>(path: string, method = 'GET', body?: unknown): 
   return response.status === 204 ? undefined as T : await response.json() as T;
 }
 export async function session() {
-  const data = await request<{ user: Account | null; csrfToken: string }>('/auth/me');
+  const data = await request<{ user: Account | null; csrfToken: string; accountsEnabled?:boolean }>('/auth/me');
   csrfToken = data.csrfToken;
+  accountsEnabled=data.accountsEnabled!==false;
   return data.user;
 }
 export async function saveProject(document: Diagram, active: {id: string; version: number} | null): Promise<Draft> {

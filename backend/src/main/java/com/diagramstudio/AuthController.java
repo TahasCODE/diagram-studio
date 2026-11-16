@@ -38,7 +38,7 @@ public class AuthController {
                         @NotBlank @Size(max=72) String password) {
         @Override public String toString() {return "Login[credentials=REDACTED]";}
     }
-    public record Session(Account user, String csrfToken) {}
+    public record Session(Account user, String csrfToken, boolean accountsEnabled) {}
     private record Credential(Account account, String hash, long version) {}
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwords;
@@ -47,20 +47,21 @@ public class AuthController {
     private final EmailVerification verification;
     private final AccountSecurity security;
     private final PasswordRecovery recovery;
+    private final boolean accountsEnabled;
 
-    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts, AccountCodes codes, EmailVerification verification, AccountSecurity security, PasswordRecovery recovery) {
+    public AuthController(JdbcTemplate jdbc, PasswordEncoder passwords, HttpSessionSecurityContextRepository contexts, AccountCodes codes, EmailVerification verification, AccountSecurity security, PasswordRecovery recovery, @org.springframework.beans.factory.annotation.Value("${studio.accounts.enabled:true}") boolean accountsEnabled) {
         this.jdbc = jdbc; this.passwords = passwords; this.contexts = contexts;
         this.codes=codes; this.verification=verification;
         this.security=security;
-        this.recovery=recovery;
+        this.recovery=recovery;this.accountsEnabled=accountsEnabled;
     }
 
     @GetMapping("/me")
     Session me(Authentication auth, CsrfToken csrf) {
-        Account account = auth == null ? null : jdbc.query("SELECT id,name,email FROM app_users WHERE id=?",
+        Account account = !accountsEnabled || auth == null ? null : jdbc.query("SELECT id,name,email FROM app_users WHERE id=?",
             (rs, row) -> new Account(rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("email")),
             UUID.fromString(auth.getName())).stream().findFirst().orElse(null);
-        return new Session(account, csrf.getToken());
+        return new Session(account, csrf.getToken(),accountsEnabled);
     }
 
     @PostMapping("/register") @ResponseStatus(HttpStatus.CREATED)

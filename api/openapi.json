@@ -3714,7 +3714,8 @@
         "type": "object",
         "required": [
           "user",
-          "csrfToken"
+          "csrfToken",
+          "accountsEnabled"
         ],
         "properties": {
           "user": {
@@ -3729,6 +3730,10 @@
           },
           "csrfToken": {
             "type": "string"
+          },
+          "accountsEnabled": {
+            "type": "boolean",
+            "description": "False for an explicitly configured guest-only deployment."
           }
         }
       },

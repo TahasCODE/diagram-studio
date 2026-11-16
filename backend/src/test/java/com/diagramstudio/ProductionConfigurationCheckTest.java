@@ -17,6 +17,12 @@ class ProductionConfigurationCheckTest {
             .withProperty("studio.mail.from","sender@example.com");
     }
     private void check(MockEnvironment env) { new ProductionConfigurationCheck(env).run(new DefaultApplicationArguments()); }
+    @Test void guestDemoSkipsOnlyMailRequirements() {
+        var env=new MockEnvironment().withProperty("studio.accounts.enabled","false");
+        assertThrows(IllegalStateException.class,()->check(env));
+        env.setProperty("spring.datasource.password","demo-database-secret");assertThrows(IllegalStateException.class,()->check(env));
+        env.setProperty("server.servlet.session.cookie.secure","true");assertDoesNotThrow(()->check(env));
+    }
     @Test void gmailApiRequiresItsOwnCredentialsButDoesNotRequireSmtp() {
         var env=configured().withProperty("studio.mail.provider","gmail-api").withProperty("spring.mail.username","").withProperty("spring.mail.password","")
             .withProperty("studio.mail.gmail.client-id","test-client").withProperty("studio.mail.gmail.client-secret","test-client-secret").withProperty("studio.mail.gmail.refresh-token","test-refresh");

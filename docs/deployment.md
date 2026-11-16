@@ -186,3 +186,31 @@ After these pass, put the actual HTTPS walkthrough link near the top of README
 and the actual demo/snapshot URLs in the portfolio. Keep localhost as a clearly
 labelled development option. Never substitute a fictional public link. The CV
 PDF is outside this release preparation and is left unchanged.
+
+## Email-free hosted guest demo
+
+For the free portfolio deployment set SPRING_PROFILES_ACTIVE=prod,
+ACCOUNTS_ENABLED=false, COOKIE_SECURE=true and the dedicated Neon DB_URL,
+DB_USER and DB_PASSWORD. Email credentials are not needed in this mode. Database
+password and secure-cookie production checks remain enforced. Account features
+default to enabled for normal local/full-stack runs.
+
+The server denies account endpoints and private draft routes before controller
+execution; /api/auth/me reports accountsEnabled=false and user=null. This is not
+a mode that accepts unverified users. The UI explains browser-local persistence,
+hides sign-in/online saving and shares JSON snapshots in URL fragments. Local
+editing, JSON backups, SVG/PNG export, presentation and guest remix remain
+available. Online revisions, server publishing and account recovery are not
+features of this hosted demo. Full-mode CI continues to verify those features.
+
+Render uses the repository Dockerfile, main branch, plan free, Singapore region,
+SERVER_PORT=8090, MANAGEMENT_ADDRESS=127.0.0.1 and MANAGEMENT_PORT=8091. Keep
+auto-deploy off so later merges are verified before manual deployment. Use a
+small JVM heap within the 512 MB service memory limit. Free service cold starts
+and workspace usage quotas apply; this is not an always-on SLA.
+
+Post-deploy: run npm.cmd run test:release with APP_URL set to the hosted origin.
+Check /api/auth/me returns accountsEnabled=false; submit a controlled account
+request with its CSRF token and confirm it is rejected, not emailed or created.
+Then verify guided branches/restart, snapshot links/remix, export and presentation
+in a fresh guest browser. Record the real URL and deployed SHA after success.
