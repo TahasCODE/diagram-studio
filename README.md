@@ -7,6 +7,13 @@ preserved in `legacy/`.
 
 **[Try the live walkthrough](https://diagram-studio-demo.onrender.com/?walkthrough=cache-outage)**
 | [Open the editor](https://diagram-studio-demo.onrender.com/)
+| [Watch the 86-second demo](https://diagram-studio-demo.onrender.com/demo.html)
+
+[![Watch the captioned guest demo](public/demo/poster.png)](https://diagram-studio-demo.onrender.com/demo.html)
+
+The recording is silent with English captions and a transcript. It shows both
+cache-failure choices, restart, remixing and an editable JSON backup using the
+real public guest app. [Reproduce the recording](docs/demo-recording.md).
 
 The public app is a **guest demo**: edit locally, play scenarios, remix, export
 and present without an account. Accounts, online saves and permanent publishing

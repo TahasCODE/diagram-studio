@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Watch a captioned Diagram Studio demo: explore cache failure choices, remix a diagram, and export a local backup.">
+<title>Watch the Demo | Diagram Studio</title>
+<style>
+:root{color-scheme:light dark;--bg:#f4f7f5;--surface:#fff;--ink:#1b2c22;--muted:#576e60;--line:#dce4df;--brand:#205640}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 Inter,system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:32px 24px 64px}nav,.actions{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}a{color:var(--brand);text-underline-offset:4px}a:focus-visible,video:focus-visible,summary:focus-visible{outline:3px solid var(--brand);outline-offset:4px}h1{font-size:clamp(28px,5vw,44px);letter-spacing:-.035em;line-height:1.15;margin:36px 0 16px}p{max-width:800px;color:var(--muted)}.eyebrow{font-size:11px;letter-spacing:.08em;font-weight:600;margin-top:36px}video{width:100%;display:block;background:#101c18;border:1px solid var(--line);border-radius:16px;aspect-ratio:16/10;margin:24px 0}video::cue{background:rgb(12 28 20 / 92%);color:#fff;font-size:16px}.primary{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.primary:hover{filter:brightness(1.15)}article,details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:24px}summary{cursor:pointer;font-weight:600}li{margin:10px 0}.note{font-size:14px}.actions{justify-content:flex-start}@media(prefers-color-scheme:dark){:root{--bg:#111a16;--surface:#19251e;--ink:#e7eee9;--muted:#b0c0b5;--line:#2b3c32;--brand:#8ac3a5}.primary{color:#111a16}}@media(max-width:600px){main{padding:20px 16px 40px}video{border-radius:8px}nav{font-size:14px}}
+</style>
+</head>
+<body><main>
+<nav aria-label="Demo navigation"><a href="/">Diagram Studio</a><a href="https://github.com/TahasCODE/diagram-studio">View the source</a></nav>
+<p class="eyebrow">RECORDED GUEST DEMO</p><h1>One diagram. Two outcomes.</h1>
+<p>Follow a read request when Redis fails, choose a response, then remix and export your own explanation. This is a silent recording with English captions, about 86 seconds long.</p>
+<video controls playsinline preload="metadata" poster="/demo/poster.png" aria-label="Captioned Diagram Studio walkthrough recording">
+<source src="/demo/diagram-studio.webm" type="video/webm">
+<track kind="captions" src="/demo/captions.vtt" srclang="en" label="English" default>
+Your browser cannot play this video. <a href="/demo/diagram-studio.webm">Download the recording</a> or read the transcript below.
+</video>
+<div class="actions"><a class="primary" href="/?walkthrough=cache-outage">Try the live walkthrough</a><a href="/demo/diagram-studio.webm" download>Download WebM</a><a href="/demo/captions.vtt">English captions</a></div>
+<article><strong>The full project and the public demo</strong><p class="note">The hosted demo supports browser-local editing, playback, remixing, snapshot links, exports and presentation. Accounts, email flows, online saves, revision history and permanent publishing are disabled only on this deployment. The complete Java/Spring Boot/PostgreSQL implementation remains in the repository with integration and browser tests. Free hosting can wake slowly after inactivity.</p></article>
+<details><summary>Read the transcript</summary><ol>
+<li>Diagram Studio lets readers explore different outcomes on one technical diagram without an account.</li>
+<li>A read request enters an API and checks Redis. At the cache timeout, the reader chooses how to respond. All timing figures in the example are illustrative.</li>
+<li>Falling back to PostgreSQL returns the data, adding latency and database load.</li>
+<li>Returning HTTP 503 protects database capacity, but the request fails. Later retries need limits and backoff.</li>
+<li>Restart resets the explanation and requires another choice.</li>
+<li>Remix makes an independent browser-local copy. Editing its title does not change the original example.</li>
+<li>Export JSON to keep an editable backup. Full-version accounts, saves, revisions and publications are demonstrated by the source and tests, not enabled on this guest host.</li>
+</ol></details>
+</main></body></html>
