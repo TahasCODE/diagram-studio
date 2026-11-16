@@ -1,5 +1,11 @@
 # Diagram Studio API contract
 
+**Scope:** this is the full application contract. On the public guest deployment,
+`GET /auth/me` reports `accountsEnabled=false` and `user=null`. Account actions,
+private projects, server publishing and account activity routes are unavailable,
+even if an old authenticated session exists. Guest editing and snapshot sharing
+run locally in the browser. Full account APIs remain implemented and tested.
+
 POST `/auth/forgot-password` accepts `{email}` and returns a generic acknowledgement;
 only verified accounts receive reset mail. POST `/auth/reset-password` accepts
 `{email,code,newPassword}` and returns 204 after consuming the reset code, replacing

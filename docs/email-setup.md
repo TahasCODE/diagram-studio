@@ -1,5 +1,10 @@
 # Account email setup
 
+**Not required for the public guest demo.** The deployed Render version disables
+accounts and sends no verification or recovery emails. The complete account/email
+implementation stays in the project; use this optional guide only when configuring
+the full application locally or on a future account-enabled host.
+
 New and existing accounts must verify their email before signing in. Migration V4
 signs out existing sessions; existing users choose **Need to Verify Your Email?**
 from the sign-in dialog and request a code. Projects are preserved.
@@ -20,8 +25,9 @@ still the default for local development and the isolated CI mailbox.
 
 ### One-time sender authorization
 
-Use the dedicated sender's Google account. This setup does not require purchasing
-a domain. Standard Gmail API use has no additional cost; Gmail's account sending
+Use the dedicated sender's Google account. Production OAuth publishing can require
+public branding links and verified domain ownership; do not assume those
+requirements can be skipped. Standard Gmail API use has no additional cost; Gmail's account sending
 limits and Google API quotas still apply. Do not activate paid cloud products.
 
 1. In Google Cloud Console, create/select **Diagram Studio Mail** and enable the

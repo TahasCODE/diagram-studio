@@ -1,5 +1,10 @@
 # Why a publication is independent of its draft
 
+**Full-application behavior:** publication, revision and conflict examples below
+are implemented and verified in the full project. Run them locally with accounts
+enabled; the hosted guest demo deliberately disables these server-backed actions.
+Guest URL-fragment snapshots are browser-generated links, not database publications.
+
 A reader should see the explanation the author shared, even while the author
 experiments with the next version. Publishing therefore copies the validated
 diagram into a publication record rather than resolving a link to the latest
