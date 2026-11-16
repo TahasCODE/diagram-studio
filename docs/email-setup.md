@@ -10,7 +10,72 @@ persisted sessions. Every authenticated API request checks it, including session
 saved by a concurrent login. Requests already authorized before revocation may
 finish. Password-change and profile events contain no password or code data.
 
-## Gmail
+## Gmail HTTPS API for free Render hosting
+
+The Gmail App Password below authenticates SMTP, which cannot use Render's free
+blocked ports. For the hosted app, choose `MAIL_PROVIDER=gmail-api`. The backend
+uses Google's HTTPS endpoints, a sender-owned refresh token, and the same
+verification/reset messages. Visitors never authorize a Google account. SMTP is
+still the default for local development and the isolated CI mailbox.
+
+### One-time sender authorization
+
+Use the dedicated sender's Google account. This setup does not require purchasing
+a domain. Standard Gmail API use has no additional cost; Gmail's account sending
+limits and Google API quotas still apply. Do not activate paid cloud products.
+
+1. In Google Cloud Console, create/select **Diagram Studio Mail** and enable the
+   **Gmail API**. This is separate from creating a Gmail App Password.
+2. Configure Google Auth Platform branding/audience for your sender authorization.
+   Use the minimum scope `https://www.googleapis.com/auth/gmail.send`; do not add
+   mailbox-reading or modification scopes. Only the owner authorizes this sender.
+3. Create a **Web application** OAuth client for a one-time authorization using
+   Google's OAuth Playground, with redirect URI
+   `https://developers.google.com/oauthplayground`. Keep the downloaded client
+   credentials outside Git; do not upload them to chat or commit them.
+4. In [OAuth Playground](https://developers.google.com/oauthplayground), enable
+   **Use your own OAuth credentials** in settings and enter that client's ID and
+   secret. Select offline access, request only `gmail.send`, authorize the
+   dedicated sender, then exchange the authorization code for tokens. Using your
+   own client is essential: Playground's built-in credentials are temporary.
+5. Configure the production OAuth publishing status before obtaining the final
+   refresh token. Google's **Testing** status normally expires refresh tokens
+   after seven days for this scope. Follow Google's applicable verification or
+   exemption rules; do not treat a testing token as a permanent production secret.
+6. Store `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, and
+   `MAIL_FROM` in Render's private environment configuration. `MAIL_FROM` must be
+   the authorized sender address (or an authorized Gmail send-as alias). Set
+   `MAIL_PROVIDER=gmail-api`. SMTP username/password and STARTTLS settings are not
+   required for this provider; the production guard instead requires all three
+   OAuth values, a real sender, a database secret and secure cookies.
+
+The backend fixes Google's token/send endpoints in code, uses bounded network
+timeouts, caches access tokens until shortly before expiry, and retries once only
+after an explicit HTTP 401 rejection. Rate-limit, quota, revoked-token and network
+failures return a generic 503; no SMTP fallback or automatic retry of ambiguous
+deliveries is attempted. Provider bodies, MIME content and credentials are not
+included in exception causes. Never enable HTTP wire logging with these secrets.
+
+Rotate/re-authorize a revoked refresh token through the sender account and update
+Render's secrets. Do not put tokens in the frontend, project JSON, URL, logs, or
+README. Refresh tokens can still be revoked by Google or the account owner even
+after leaving Testing.
+
+### Verification before declaring email ready
+
+Local Java tests exercise fake loopback token/send endpoints, MIME encoding,
+token reuse, 401 refresh, quota rejection and revoked credentials. CI's real-HTTP
+account tests continue to use the local SMTP sink. Neither establishes inbox
+delivery. After configuring the sender, verify signup and password reset using an
+address controlled by the owner; check actual inbox delivery, expiry/one-time use,
+and session revocation. Keep the public release marked pending until these pass.
+
+References: [Gmail sending](https://developers.google.com/workspace/gmail/api/guides/sending),
+[OAuth offline access](https://developers.google.com/identity/protocols/oauth2/web-server#offline),
+[OAuth token expiration](https://developers.google.com/identity/protocols/oauth2#expiration),
+[Gmail quotas](https://developers.google.com/workspace/gmail/api/reference/quota).
+
+## Gmail SMTP for local development
 
 The simplest local launcher prompts for both the sender and its App Password:
 

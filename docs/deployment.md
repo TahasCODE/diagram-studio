@@ -53,6 +53,11 @@ configuration after real secrets have been supplied.
   Use a dedicated sender and an SMTP application credential. Outbound SMTP must
   be allowed by the chosen host. See [email setup](email-setup.md). Do not deploy
   the local mailbox, expose its ports, or use `.test` sender addresses.
+  This is the default `MAIL_PROVIDER=smtp` route. For free Render hosting use
+  `MAIL_PROVIDER=gmail-api` with `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`,
+  `GMAIL_REFRESH_TOKEN`, and `MAIL_FROM` instead; follow the one-time sender
+  authorization in [email setup](email-setup.md). Do not configure Gmail SMTP
+  on Render's free plan or disable signup verification to conceal failed delivery.
 - `SERVER_PORT` if the host requires a different listening port; default 8090.
 - `MANAGEMENT_ADDRESS=127.0.0.1`, `MANAGEMENT_PORT=8091` by default. Keep management
   private and out of the public ingress. Optional `STUDIO_OPS_USERNAME` and
@@ -61,7 +66,8 @@ configuration after real secrets have been supplied.
 
 Production startup rejects missing/development database passwords, insecure
 cookies, missing sender credentials/address, test sender domains, or disabled
-SMTP authentication/required STARTTLS. These checks validate configuration, not
+SMTP authentication/required STARTTLS (SMTP provider), or missing OAuth credentials
+(Gmail API provider). These checks validate configuration, not
 database backups, sender deliverability or the ingress's TLS setup. Spring still
 needs a working database to complete startup.
 

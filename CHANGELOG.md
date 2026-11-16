@@ -1,5 +1,9 @@
 # Changelog
 
+## Gmail HTTPS delivery
+- Added sender-owned Gmail API delivery for free hosting, with cached token refresh, bounded network waits and safe failure responses; local SMTP remains the default.
+- Added isolated transport tests and production configuration checks. Actual Google authorization and inbox delivery remain pending.
+
 ## Unreleased
 
 - Add a signed-in header Log Out control next to the save status, using the existing confirmation and preserving the local diagram.

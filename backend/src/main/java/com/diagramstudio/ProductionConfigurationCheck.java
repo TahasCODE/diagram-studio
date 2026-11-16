@@ -14,6 +14,15 @@ public class ProductionConfigurationCheck implements ApplicationRunner {
         String password=environment.getProperty("spring.datasource.password","");
         if(password.isBlank() || "diagram_local_only".equals(password)) throw new IllegalStateException("Production requires a configured database password; the development password is not allowed.");
         if(!environment.getProperty("server.servlet.session.cookie.secure",Boolean.class,false)) throw new IllegalStateException("Production requires secure cookies and HTTPS. Set COOKIE_SECURE=true.");
+        String provider=environment.getProperty("studio.mail.provider","smtp");
+        String from=environment.getProperty("studio.mail.from","");
+        if(from.isBlank()||from.endsWith(".test"))throw new IllegalStateException("Production requires a real MAIL_FROM address.");
+        if("gmail-api".equals(provider)){
+            for(String key:new String[]{"client-id","client-secret","refresh-token"})
+                if(environment.getProperty("studio.mail.gmail."+key,"").isBlank())throw new IllegalStateException("Gmail API requires sender OAuth credentials.");
+            return;
+        }
+        if(!"smtp".equals(provider))throw new IllegalStateException("Unsupported mail provider.");
         if(environment.getProperty("spring.mail.username","").isBlank() || environment.getProperty("spring.mail.password","").isBlank()
             || environment.getProperty("studio.mail.from","").isBlank()
             || !environment.getProperty("spring.mail.properties.mail.smtp.starttls.required",Boolean.class,false)
