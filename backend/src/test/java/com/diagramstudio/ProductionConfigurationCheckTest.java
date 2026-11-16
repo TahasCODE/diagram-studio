@@ -17,6 +17,15 @@ class ProductionConfigurationCheckTest {
             .withProperty("studio.mail.from","sender@example.com");
     }
     private void check(MockEnvironment env) { new ProductionConfigurationCheck(env).run(new DefaultApplicationArguments()); }
+    @Test void gmailApiRequiresItsOwnCredentialsButDoesNotRequireSmtp() {
+        var env=configured().withProperty("studio.mail.provider","gmail-api").withProperty("spring.mail.username","").withProperty("spring.mail.password","")
+            .withProperty("studio.mail.gmail.client-id","test-client").withProperty("studio.mail.gmail.client-secret","test-client-secret").withProperty("studio.mail.gmail.refresh-token","test-refresh");
+        assertDoesNotThrow(()->check(env));
+        for(var key:new String[]{"client-id","client-secret","refresh-token"}){
+            var value=env.getProperty("studio.mail.gmail."+key);env.setProperty("studio.mail.gmail."+key,"");assertThrows(IllegalStateException.class,()->check(env));env.setProperty("studio.mail.gmail."+key,value);
+        }
+        assertThrows(IllegalStateException.class,()->check(configured().withProperty("studio.mail.provider","unknown")));
+    }
     @Test void acceptsConfiguredProductionProperties() {
         assertDoesNotThrow(() -> check(configured()));
     }

@@ -12,8 +12,12 @@ import org.springframework.http.HttpStatus;
 public class AccountMail {
     private final JavaMailSender sender;
     private final String from;
-    public AccountMail(JavaMailSender sender, @Value("${studio.mail.from}") String from) {
-        this.sender = sender; this.from = from;
+    private final GmailApiMail gmail;
+    private final boolean useGmail;
+    public AccountMail(JavaMailSender sender, GmailApiMail gmail, @Value("${studio.mail.from}") String from,
+                       @Value("${studio.mail.provider:smtp}") String provider) {
+        if(!"smtp".equals(provider)&&!"gmail-api".equals(provider))throw new IllegalStateException("Unsupported mail provider.");
+        this.sender = sender; this.from = from;this.gmail=gmail;this.useGmail="gmail-api".equals(provider);
     }
     public void sendCode(String email, String code, String purpose) {
         var message = new SimpleMailMessage();
@@ -23,8 +27,8 @@ public class AccountMail {
         message.setText("Your " + (reset ? "password reset" : "email verification") + " code is: " + code
             + "\n\nThis code expires in 10 minutes and can be used once. Never share it."
             + "\nIf you did not request this, you can ignore this email.\n\nDiagram Studio");
-        try { sender.send(message); }
-        catch (MailException error) {
+        try { if(useGmail)gmail.send(message);else sender.send(message); }
+        catch (MailException | GmailApiMail.DeliveryFailure error) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                 "Email delivery is unavailable. Please try again later.");
         }
