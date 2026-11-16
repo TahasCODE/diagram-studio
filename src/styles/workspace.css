@@ -48,3 +48,15 @@ main { display:grid; grid-template-columns:minmax(0,1fr) var(--inspector-width);
   .header-actions #header-logout>.icon { display:block; width:18px; height:18px; }
 }
 @media(max-width:380px) { .app-header:has(#header-logout) .brand h1 { display:none; } }
+.export-preview { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:repeating-conic-gradient(#a3ada5 0% 25%,#d8ded9 0% 50%) 0 / 16px 16px; }
+.export-preview img { display:block; width:100%; height:auto; }
+#export-image { pointer-events:auto; width:auto; display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--line); background:var(--surface-raised); box-shadow:var(--shadow-xs); }
+.export-checkbox { display:flex; align-items:center; gap:8px; margin:16px 0; }
+.export-checkbox input { width:16px; height:16px; margin:0; }
+.impact-list { list-style:none; padding:0; display:grid; gap:16px; }
+.impact-list>li { border:1px solid var(--line); border-radius:12px; padding:12px; overflow-wrap:anywhere; }
+.impact-list>li>.section-tag { display:inline-block; margin:8px 0 8px 8px; }
+.impact-list ul { padding-left:16px; font-size:13px; line-height:1.6; }
+.impact-list button { margin-top:12px; }
+.impact-banner { flex-wrap:wrap; }
+@media(max-width:600px) { .export-button-label { display:none; } }

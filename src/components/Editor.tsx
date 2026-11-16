@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Diagram } from '../lib/model';
 import { Icon } from './Icon';
+import { ScenarioReview } from './ScenarioReview';
 import { arrangeNodes, flagScenarios } from '../lib/model';
 
 function Field({id, label, value, onCommit, multiline = false, max = 48, disabled = false, placeholder}: {
@@ -16,8 +17,9 @@ interface Props {
   document: Diagram; scenario: number; selected?: string; onSelect: (id?: string) => void;
   onChange: (edit: (draft: Diagram) => void) => void; onScenario: (index: number) => void;
   confirm: (title: string, message: string, action: () => void) => void;
+  onInspect:(scenario:number,step:number)=>void;
 }
-export function Editor({document, scenario, selected, onSelect, onChange, onScenario, confirm}: Props) {
+export function Editor({document, scenario, selected, onSelect, onChange, onScenario, confirm, onInspect}: Props) {
   const [route, setRoute] = useState(0);
   const [branchName, setBranchName] = useState('');
   const [newName, setNewName] = useState('');
@@ -61,6 +63,6 @@ export function Editor({document, scenario, selected, onSelect, onChange, onScen
     <div className="actions route-actions"><button id="insert-step" disabled={!node || index < 0 || current.steps.length >= 500} onClick={() => { if (selected) onChange(d => { d.scenarios[scenario].steps.splice(index,0,selected); }); }}>Insert Before Step</button><button id="replace-step" disabled={!node || index < 0} onClick={() => { if (selected) onChange(d => { d.scenarios[scenario].steps[index] = selected; }); }}>Replace Step</button></div>
     <details className="editor-details"><summary>Create an Alternate Path</summary><p className="hint">Select a step above. Keep the path up to that point and build an alternate ending.</p><label htmlFor="branch-name">Alternate Scenario Name</label><input id="branch-name" maxLength={48} value={branchName} onChange={e => setBranchName(e.target.value)}/><button id="branch" disabled={!branchName.trim() || index < 0 || document.scenarios.length >= 100} onClick={() => addScenario(true)}>Branch From Selected Step</button></details>
     <details className="editor-details"><summary>Add a New Scenario</summary><label htmlFor="name">Scenario Name</label><input id="name" maxLength={48} value={newName} onChange={e => setNewName(e.target.value)}/><button id="create" disabled={!newName.trim() || document.scenarios.length >= 100} onClick={() => addScenario(false)}><Icon name="plus" size={14}/>Add Scenario</button></details>
-    <div className="review-panel"><div className="section-heading"><span className="section-icon" aria-hidden="true">✓</span><h2>Scenario Review</h2></div><p className="hint">Node changes flag affected scenarios. Play each path to verify your edits.</p><ul id="reviews">{document.scenarios.some(s => s.review?.length) ? document.scenarios.map((s,i) => s.review?.length ? <li key={i}><button onClick={() => onScenario(i)}>{s.name}</button><p>{s.review.join(' ')}</p></li> : null) : <li>All Scenarios Reviewed.</li>}</ul><button id="reviewed" disabled={!current.review?.length} onClick={() => onChange(d => { delete d.scenarios[scenario].review; })}>Mark Current Scenario Reviewed</button></div>
+    <ScenarioReview document={document} current={scenario} onChange={onChange} onInspect={onInspect}/>
   </section>;
 }
