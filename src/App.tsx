@@ -192,6 +192,11 @@ export default function App() {
     dispatch({type:'edit',document:next}); setActive(null); setScenario(0); setStep(0); setSelected(next.nodes[0]?.id); setCloudError(''); setNotice('Local workspace replaced. Use Undo to restore the previous diagram.');
   };
   const openAuth = () => { setAuthError(''); setAuthMessage(''); setAuthSuccess(null); setAuthMode('login'); setModal('auth'); };
+  const signOut=()=>confirm('Sign Out','Sign out of this browser? Your local diagram will remain on this device.',async()=>{
+    setBusy(true);
+    try{await request('/auth/logout','POST');await session();setUser(null);setActive(null);setCloudError('');setSaveConflict(null);setRecovery(null);setNotice('Signed out. Your local diagram remains on this device.');}
+    catch(error){setNotice(errorMessage(error));}finally{setBusy(false);}
+  });
   const onKey = useCallback((event: KeyboardEvent) => {
     if ((event.target as HTMLElement)?.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])') || globalThis.document.querySelector('dialog[open]')) return;
     if ((event.ctrlKey || event.metaKey) && !event.altKey) {
@@ -401,6 +406,7 @@ export default function App() {
       readOnly={readOnly} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
       onProjects={loadProjects} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
       saveLabel={walkthroughMode?'Guest Walkthrough':readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
+      onLogout={user?signOut:undefined}
       headerActions={<>
         {user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Account Settings" onClick={() => setModal('account')}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>}
         {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : <button id="save-online" title="Save Online (Ctrl/Cmd+S)" aria-label="Save Online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
@@ -438,7 +444,7 @@ export default function App() {
     </WorkspaceShell>
 
     {modal === 'confirm' && confirmDetails && <Dialog title={confirmDetails.title} onClose={() => setModal(null)}><p className="dialog-copy">{confirmDetails.message}</p><div className="actions"><button className="primary" onClick={() => { setModal(null); confirmDetails.action(); }}>Continue</button><button onClick={() => setModal(null)}>Cancel</button></div></Dialog>}
-    {modal==='account'&&user&&<AccountSettings account={user} onClose={()=>setModal(null)} onProfile={setUser} onSignedOut={message=>{setUser(null);setActive(null);setAuthMode('login');setAuthError('');setAuthMessage(message);setAuthSuccess(null);setModal('auth');}} onSignOut={()=>confirm('Sign Out','Sign out of this browser? Your local diagram will remain on this device.',async()=>{setBusy(true);try{await request('/auth/logout','POST');await session();setUser(null);setActive(null);setNotice('Signed out. Your local diagram remains on this device.');}catch(error){setNotice(errorMessage(error));}finally{setBusy(false);}})}/>}
+    {modal==='account'&&user&&<AccountSettings account={user} onClose={()=>setModal(null)} onProfile={setUser} onSignedOut={message=>{setUser(null);setActive(null);setAuthMode('login');setAuthError('');setAuthMessage(message);setAuthSuccess(null);setModal('auth');}} onSignOut={signOut}/>}
     {modal === 'auth' && <Dialog title={authSuccess?'You’re Signed In':authViews[authMode].title} onClose={() => {if(!busy)setModal(null);}}>
       {authSuccess ? <div className="auth-success" role="status"><span className="auth-success-icon"><Icon name="check" size={28}/></span><h3>Welcome back, {authSuccess.name.split(' ')[0]}.</h3><p>You’re securely signed in as <strong>{authSuccess.email}</strong>. Your saved projects and version history are ready.</p><button className="primary" onClick={() => {setModal(null);setAuthSuccess(null);}}>Continue to Workspace<Icon name="right" size={16}/></button></div> : <>
         <p className="dialog-copy">{authViews[authMode].description}</p>

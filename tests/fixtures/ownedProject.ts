@@ -3,7 +3,7 @@ import {parseDiagram} from '../../src/lib/model';
 import type {Diagram} from '../../src/lib/model';
 import type {Draft} from '../../src/lib/api';
 
-interface Fixture {draft:Draft;document:Diagram;api:(path:string,method?:string,body?:unknown,status?:number)=>Promise<any>;track:(id:string)=>void}
+interface Fixture {draft:Draft;document:Diagram;api:(path:string,method?:string,body?:unknown,status?:number)=>Promise<any>;track:(id:string)=>void;signIn:()=>Promise<void>}
 export const test=base.extend<{ownedProject:Fixture}>({
   ownedProject:async({page,context},use,testInfo)=>{
     expect(['localhost','127.0.0.1']).toContain(new URL(testInfo.project.use.baseURL!).hostname);
@@ -26,7 +26,7 @@ export const test=base.extend<{ownedProject:Fixture}>({
         localStorage.setItem('diagram-studio-v1',JSON.stringify(document));localStorage.setItem('diagram-studio-v1-cloud',JSON.stringify(active));
       }
     },{document,active:{id:draft.id,version:draft.version,ownerId:account.id,savedJson:JSON.stringify(document)}});
-    try{await use({draft,document,api,track:id=>ids.add(id)});}
+    try{await use({draft,document,api,track:id=>ids.add(id),signIn:async()=>{await api('/auth/login','POST',{email,password});}});}
     finally{
       for(const id of ids){
         try{const latest=await api('/projects/'+id);await api('/projects/'+id+'?version='+latest.version,'DELETE',undefined,204);}

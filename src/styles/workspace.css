@@ -41,3 +41,10 @@ main { display:grid; grid-template-columns:minmax(0,1fr) var(--inspector-width);
 .notice-bar span { overflow-wrap:anywhere; min-width:0; } .notice-bar[data-tone=info]>.icon { color:var(--info); } .notice-bar.is-leaving { opacity:0; transform:translateY(8px); transition:opacity var(--motion),transform var(--motion); }
 
 .diagram-plane { transition:transform var(--motion); } .is-panning .diagram-plane { transition:none; } @media(max-width:1023px) { .inspector-backdrop { inset:0; z-index:46; } .inspector { z-index:50; } }
+
+@media(max-width:700px) {
+  .header-actions #header-logout { display:inline-flex; width:36px; padding:8px; gap:0; }
+  .header-actions #header-logout>span { display:none; }
+  .header-actions #header-logout>.icon { display:block; width:18px; height:18px; }
+}
+@media(max-width:380px) { .app-header:has(#header-logout) .brand h1 { display:none; } }

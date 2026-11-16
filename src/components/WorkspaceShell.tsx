@@ -10,6 +10,7 @@ interface Props {
   headerActions: ReactNode; sidebar: ReactNode; banners: ReactNode; children: ReactNode; notice: string; noticeVersion:number;
   initialInspectorOpen?:boolean;
   walkthrough?:boolean;
+  onLogout?:()=>void;
 }
 export function WorkspaceShell(props: Props) {
   const [compact,setCompact]=useState(()=>matchMedia('(max-width:1023px)').matches);
@@ -30,6 +31,7 @@ export function WorkspaceShell(props: Props) {
       <a className="brand" href="/" aria-label="Diagram Studio Home"><span className="brand-mark"><Icon name="diagram" size={21}/></span><h1>Diagram Studio</h1></a>
       <div className="header-divider"/><span className="header-context">{props.walkthrough?'Guided walkthrough':props.readOnly?'Published diagram':props.isRemix?'Remix workspace':'Personal workspace'}</span>
       <div className="actions header-actions"><span id="save-state" className={'save-state'+(props.saveError?' save-error':'')} role="status"><span className="status-dot"/>{props.saveLabel}</span>
+        {props.onLogout&&<button id="header-logout" className="quiet-button" aria-label="Log Out" title="Log Out" disabled={props.busy} onClick={props.onLogout}><Icon name="logout" size={16}/><span>Log Out</span></button>}
         <button id="theme-toggle" className="icon-button" aria-label={props.dark?'Use Light Theme':'Use Dark Theme'} title={props.dark?'Light Theme':'Dark Theme'} aria-pressed={props.dark} onClick={props.onTheme}><Icon name={props.dark?'sun':'moon'}/></button>
         {props.headerActions}
       </div>
