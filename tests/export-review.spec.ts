@@ -11,7 +11,8 @@ test.beforeEach(async({page})=>{
   await page.route('**/*',async route=>{
     if(route.request().resourceType()!=='document'){await route.continue();return;}
     const response=await route.fetch();
-    await route.fulfill({response,headers:{...response.headers(),'content-security-policy':contentSecurityPolicy!}});
+    const headers=response.headers();
+    await route.fulfill({response,headers:{...headers,'content-security-policy':headers['content-security-policy']||contentSecurityPolicy!}});
   });
 });
 test('guest exports portable SVG/PNG and reviews affected paths without losing edits',async({page})=>{
