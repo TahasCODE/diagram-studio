@@ -33,8 +33,8 @@ test('reviews field choices, preserves cancel/reload edits, and rejects a second
   await expect(dialog.getByRole('group',{name:'Project title',exact:true})).toBeVisible();
   await stale.screenshot({path:'.runtime/conflict-390-dark.png',fullPage:true,animations:'disabled'});
   await dialog.getByRole('group',{name:'Project title',exact:true}).getByRole('radio',{name:'Keep My Value',exact:true}).check();
-  await editor(page);await page.getByRole('button',{name:'Worker',exact:true}).click();await page.locator('#label').fill('Worker revised');await page.locator('#label').press('Tab');await save(page);
-  const winner=await project.api('/projects/'+project.draft.id);expect(winner.version).toBe(3);
+  await editor(page);await page.getByRole('button',{name:'Worker',exact:true}).click();await expect(page.locator('#label')).toHaveValue('Worker');await page.locator('#label').fill('Worker revised');await expect(page.locator('#label')).toHaveValue('Worker revised');await page.locator('#label').press('Tab');await save(page);
+  const winner=await project.api('/projects/'+project.draft.id);expect(winner.version).toBe(3);expect(winner.document.nodes.find((node:{id:string})=>node.id==='c').label).toBe('Worker revised');
   await stale.bringToFront();const rejected=stale.waitForResponse(response=>response.url().endsWith('/api/projects/'+project.draft.id)&&response.request().method()==='PUT');
   await dialog.getByRole('button',{name:'Save Reviewed Merge',exact:true}).click();expect((await rejected).status()).toBe(409);
   await expect(dialog.getByRole('alert')).toContainText('server changed again');await expect(dialog.getByRole('button',{name:'Save Reviewed Merge',exact:true})).toBeDisabled();

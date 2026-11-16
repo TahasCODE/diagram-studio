@@ -55,3 +55,6 @@ describes that snapshot; it does not imply earlier releases or pull requests.
 ## Presentation mode
 - Added distraction-free presentation using the existing read-only canvas and scenario player, with larger notes, keyboard navigation, preserved branch gating, optional browser full screen and responsive auto-fit.
 - Capitalized the workspace header to Personal Workspace.
+
+## Playback visual polish
+- Refined the current-step card with a separate progress badge, clear node headline and a subtle brand accent in both themes. Playback behavior is unchanged.
