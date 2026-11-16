@@ -2,12 +2,28 @@
 
 ## Current status
 
-The repository is public; the application has **not been deployed publicly**.
-The README's walkthrough link is local. Release preparation is not evidence of a
-hosted service, real users, uptime or production email delivery. Get explicit
-approval of the hosting target, public exposure and any monthly cost before
-creating cloud resources, configuring public DNS or deploying. A custom domain
-is optional. Do not describe this as a live demo on a CV until the public checks pass.
+The email-free guest demo is live at https://diagram-studio-demo.onrender.com/
+(Render free web service, Singapore; dedicated Neon PostgreSQL 18 project).
+The initial deployed code is merge commit 9628fd62c17d6b8786d0a19a59b892573f262ccc.
+The existing CRUD service/database were not modified.
+
+The public deployment sets ACCOUNTS_ENABLED=false. It demonstrates browser-local
+editing, playback, guest remixes, snapshot links, exports and presentation.
+Private drafts, revisions, immutable publications and accounts are verified in the
+full-mode code/tests; do not imply these are enabled on the hosted guest demo.
+Gmail authorization and live email delivery are not part of this release.
+
+On 2026-11-16, all 13 read-only release checks passed against the HTTPS origin.
+A fresh Chrome session verified secure HttpOnly SameSite=Lax session cookies,
+server rejection of account requests, snapshot playback/remixing, SVG/PNG
+downloads, presentation, both guided outcomes/restart, dark-theme persistence and
+a 390px mobile layout. Public account probes used empty invalid bodies, so they
+could not create an account or send mail even if the guard failed.
+This records a smoke test, not uptime, real-user adoption or a load benchmark.
+
+Auto-deploy is off. Future changes follow branch/commit/PR/CI/merge, then a manual
+Render deploy and post-deploy checks. Keep using the free plan unless the owner
+approves a paid change.
 
 ## Deployment shape
 

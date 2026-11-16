@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 test('guest demo explains local storage, disables accounts and shares a remixable snapshot',async({page,context})=>{
   await context.route('https://fonts.googleapis.com/**',route=>route.abort());
-  await context.route('**/api/auth/me',route=>route.fulfill({json:{user:null,csrfToken:'demo-test',accountsEnabled:false}}));
+  let releaseCapabilities!:()=>void;
+  const capabilitiesReady=new Promise<void>(resolve=>{releaseCapabilities=resolve;});
+  await context.route('**/api/auth/me',async route=>{await capabilitiesReady;await route.fulfill({json:{user:null,csrfToken:'demo-test',accountsEnabled:false}});});
   const writes:string[]=[];context.on('request',request=>{if(request.url().includes('/api/')&&request.method()!=='GET')writes.push(request.url());});
-  await page.goto('/',{waitUntil:'domcontentloaded'});await expect(page.getByText('Guest Demo: edits save in this browser.',{exact:false})).toBeVisible();
+  await page.goto('/',{waitUntil:'domcontentloaded'});await expect(page.locator('#project-heading')).toBeVisible();await expect(page.locator('#sign-in')).toHaveCount(0);await expect(page.locator('#save-online')).toHaveCount(0);releaseCapabilities();await expect(page.getByText('Guest Demo: edits save in this browser.',{exact:false})).toBeVisible();
   await expect(page.locator('#sign-in')).toHaveCount(0);await expect(page.locator('#save-online')).toHaveCount(0);
   await page.keyboard.press('Control+s');await expect(page.getByText('Accounts are unavailable in this guest demo.',{exact:false})).toBeVisible();await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('button',{name:'Share Snapshot',exact:true}).click();const url=await page.locator('#playback-link').inputValue();expect(new URL(url).hash.length).toBeGreaterThan(10);

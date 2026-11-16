@@ -5,9 +5,18 @@ private drafts, publish fixed playback snapshots, and let readers explore or
 remix those snapshots without an account. The original standalone prototype is
 preserved in `legacy/`.
 
-**[Open the local walkthrough](http://localhost:8090/?walkthrough=cache-outage)**
-— no account needed. Start it on Windows with `npm.cmd start` and wait for the
-server to finish starting. **A public app demo has not been deployed yet.**
+**[Try the live walkthrough](https://diagram-studio-demo.onrender.com/?walkthrough=cache-outage)**
+| [Open the editor](https://diagram-studio-demo.onrender.com/)
+
+The public app is a **guest demo**: edit locally, play scenarios, remix, export
+and present without an account. Accounts, online saves and permanent publishing
+are disabled on this hosted version. Export JSON to back up your work.
+Free hosting can take a while to wake after inactivity.
+
+[![Verify Full Stack](https://github.com/TahasCODE/diagram-studio/actions/workflows/verify.yml/badge.svg)](https://github.com/TahasCODE/diagram-studio/actions/workflows/verify.yml)
+
+For the full account-backed application locally, run npm.cmd start on Windows
+and open http://localhost:8090 after startup. Email setup is documented separately.
 
 [85-second demo script, case study and verified CV bullets](docs/portfolio.md)
 · [Deployment and post-deploy checks](docs/deployment.md)
@@ -16,7 +25,7 @@ server to finish starting. **A public app demo has not been deployed yet.**
 
 ## Try the standout walkthrough
 
-**[What happens when the cache goes down?](http://localhost:8090/?walkthrough=cache-outage)**
+**[What happens when the cache goes down?](https://diagram-studio-demo.onrender.com/?walkthrough=cache-outage)**
 follows a read request through an API, Redis and PostgreSQL. Start the walkthrough,
 advance to the cache failure, then choose a database fallback or a temporary error.
 Each path explains who gets data, what extra work happens, and the tradeoff.
