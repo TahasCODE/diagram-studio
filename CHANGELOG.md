@@ -51,3 +51,7 @@ describes that snapshot; it does not imply earlier releases or pull requests.
 ## PNG export decoding fix
 - Reuse the CSP-compatible SVG preview source for PNG rasterization. Keep the packaged image security policy unchanged.
 - Exercise browser image downloads under the image directive read from the backend security configuration.
+
+## Presentation mode
+- Added distraction-free presentation using the existing read-only canvas and scenario player, with larger notes, keyboard navigation, preserved branch gating, optional browser full screen and responsive auto-fit.
+- Capitalized the workspace header to Personal Workspace.

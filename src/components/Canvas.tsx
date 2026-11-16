@@ -9,12 +9,14 @@ interface Props {
   document:Diagram; scenario:number; step:number; selected?:string; readOnly:boolean;
   onSelect:(id:string)=>void; onChange:(document:Diagram)=>void;
   onUndo:()=>void; onRedo:()=>void; canUndo:boolean; canRedo:boolean;
+  onPresent?:()=>void; presentation?:boolean;
 }
 export function Canvas(props:Props){
   const [exportOpen,setExportOpen]=useState(false);
   const board=useRef<HTMLDivElement>(null);
   const [viewport,setSize]=useState({width:900,height:600});
-  const size={width:Math.max(viewport.width,UI.minPlaneWidth),height:viewport.height};
+  const size={width:Math.max(viewport.width,UI.minPlaneWidth),height:props.presentation?Math.max(viewport.height,UI.presentationPlaneHeight):viewport.height};
+  const minZoom=props.presentation?UI.presentationMinZoom:UI.minZoom;
   const [position,setPosition]=useState<{id:string;x:number;y:number}|null>(null);
   const [zoom,setZoom]=useState(1),[pan,setPan]=useState({x:0,y:0});
   const [panning,setPanning]=useState(false);
@@ -64,14 +66,16 @@ export function Canvas(props:Props){
     if(!boxes.length){setZoom(1);setPan({x:0,y:0});return;}
     const left=Math.min(...boxes.map(b=>b.x-b.width/2)),right=Math.max(...boxes.map(b=>b.x+b.width/2));
     const top=Math.min(...boxes.map(b=>b.y-b.height/2)),bottom=Math.max(...boxes.map(b=>b.y+b.height/2));
-    const next=Math.max(UI.minZoom,Math.min(1.5,(viewport.width-UI.fitPadding)/(right-left),(viewport.height-UI.fitPadding)/(bottom-top)));
+    const next=Math.max(minZoom,Math.min(1.5,(viewport.width-UI.fitPadding)/(right-left),(viewport.height-UI.fitPadding)/(bottom-top)));
     setZoom(next);setPan({x:viewport.width/2-(left+right)/2*next,y:viewport.height/2-(top+bottom)/2*next});
   };
+  useEffect(()=>{if(props.presentation)fit();},[props.presentation,viewport.width,viewport.height]);
   return <section className="board" aria-label="Diagram" data-compact={viewport.width<600} style={{'--node-width':nodeWidth+'px','--node-height':nodeHeight+'px'} as CSSProperties}>
     <div className="canvas-toolbar"><span className="canvas-title"><Icon name="diagram" size={16}/>System Diagram</span><div className="canvas-tools">
-      <button id="export-image" title="Export Diagram Image" aria-label="Export Diagram Image" onClick={()=>setExportOpen(true)}><Icon name="download" size={16}/><span className="export-button-label">Export</span></button>
+      {props.onPresent&&<button id="present-diagram" className="canvas-action" title="Present Diagram" aria-label="Present Diagram" onClick={props.onPresent}><Icon name="play" size={16}/></button>}
+      {!props.presentation&&<button id="export-image" title="Export Diagram Image" aria-label="Export Diagram Image" onClick={()=>setExportOpen(true)}><Icon name="download" size={16}/><span className="export-button-label">Export</span></button>}
       {!props.readOnly&&<div className="tool-group history-buttons"><button id="undo" aria-label="Undo" disabled={!props.canUndo} onClick={props.onUndo} title="Undo (Ctrl/Cmd+Z)"><Icon name="undo" size={16}/></button><button id="redo" aria-label="Redo" disabled={!props.canRedo} onClick={props.onRedo} title="Redo (Ctrl/Cmd+Shift+Z)"><Icon name="redo" size={16}/></button></div>}
-      <div className="tool-group"><button aria-label="Zoom Out" title="Zoom out" disabled={zoom<=UI.minZoom} onClick={()=>changeZoom(Math.max(UI.minZoom,zoom-UI.zoomStep))}><Icon name="minus" size={16}/></button><button className="canvas-scale" aria-label="Reset Zoom" title="Reset zoom to 100%" onClick={()=>{setZoom(1);setPan({x:0,y:0});}}>{Math.round(zoom*100)}%</button><button aria-label="Zoom In" title="Zoom in" disabled={zoom>=UI.maxZoom} onClick={()=>changeZoom(Math.min(UI.maxZoom,zoom+UI.zoomStep))}><Icon name="plus" size={16}/></button><span className="tool-divider"/><button aria-label="Fit Diagram" title="Fit diagram to view" onClick={fit}><Icon name="fit" size={16}/></button></div>
+      <div className="tool-group"><button aria-label="Zoom Out" title="Zoom out" disabled={zoom<=minZoom} onClick={()=>changeZoom(Math.max(minZoom,zoom-UI.zoomStep))}><Icon name="minus" size={16}/></button><button className="canvas-scale" aria-label="Reset Zoom" title="Reset zoom to 100%" onClick={()=>{setZoom(1);setPan({x:0,y:0});}}>{Math.round(zoom*100)}%</button><button aria-label="Zoom In" title="Zoom in" disabled={zoom>=UI.maxZoom} onClick={()=>changeZoom(Math.min(UI.maxZoom,zoom+UI.zoomStep))}><Icon name="plus" size={16}/></button><span className="tool-divider"/><button aria-label="Fit Diagram" title="Fit diagram to view" onClick={fit}><Icon name="fit" size={16}/></button></div>
     </div></div>
     <div ref={board} className={'diagram-stage'+(panning?' is-panning':'')} aria-label="Diagram Viewport" onPointerDown={event=>{if(event.button!==0||(event.target as HTMLElement).closest('button'))return;event.currentTarget.setPointerCapture(event.pointerId);panDrag.current={startX:event.clientX,startY:event.clientY,...pan};setPanning(true);}} onPointerMove={event=>{if(panDrag.current)setPan({x:panDrag.current.x+event.clientX-panDrag.current.startX,y:panDrag.current.y+event.clientY-panDrag.current.startY});}} onPointerUp={event=>{panDrag.current=null;setPanning(false);if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);}} onPointerCancel={()=>{panDrag.current=null;setPanning(false);}}>
       <div className="diagram-plane" style={{width:size.width,height:size.height,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}>
@@ -94,7 +98,7 @@ export function Canvas(props:Props){
         })}</div>
       </div>
     </div>
-    {!nodes.length&&<div className="empty-canvas"><strong>Your next explanation starts here.</strong><p>Add a node, then build a scenario.</p></div>}
+    {!nodes.length&&<div className="empty-canvas"><strong>{props.presentation?'No nodes to present.':'Your next explanation starts here.'}</strong><p>{props.presentation?'Exit presentation to add nodes and build a scenario.':'Add a node, then build a scenario.'}</p></div>}
     <div className="canvas-legend"><span><i className="legend-active"/>Current step</span>{!props.readOnly&&<span><i className="legend-selected"/>Selected node</span>}</div>
     {!!nodes.length&&<button className="minimap" aria-label="Fit Diagram from Minimap" title="Diagram overview · Click to fit" onClick={fit}><svg viewBox={`0 0 ${size.width} ${size.height}`} aria-hidden="true">{routes.map(route=><path key={route.key} d={route.path} fill="none" stroke="var(--edge)" strokeWidth="4"/>)}{boxes.map(box=><rect key={box.id} className={'minimap-node'+(path[props.step]===box.id?' current':'')} x={box.x-box.width/2} y={box.y-box.height/2} width={box.width} height={box.height} rx={12}/>)}<rect className="minimap-viewport" x={-pan.x/zoom} y={-pan.y/zoom} width={viewport.width/zoom} height={viewport.height/zoom} rx={8}/></svg></button>}
     {viewport.width+UI.fitPadding<size.width&&<span className="canvas-pan-hint">Drag to pan · Fit to see all</span>}

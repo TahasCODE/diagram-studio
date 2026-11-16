@@ -244,3 +244,9 @@ Use **Export** in the canvas toolbar to preview and download SVG or PNG without 
 Rename, edit notes, or delete a shared node to flag every affected scenario. **Review Scenario Impact** opens the editor's review queue. Read the reasons, choose a remaining step to inspect in playback, then mark that path reviewed. Deleted nodes are removed from paths automatically; review the remaining path rather than a broken reference. Review notes persist with drafts, support undo, and are omitted from immutable publications. Moving nodes does not require a content review.
 
 Verification: image export unit tests cover text escaping, background/playback options and empty paths. Browser coverage in tests/export-review.spec.ts checks guest SVG/PNG downloads, review persistence and undo, plus export at 1440, 1024 and 390px.
+
+### Presentation mode
+
+Click the play icon (**Present Diagram**) in the canvas toolbar for a read-only, viewport-filling presentation. The existing scenario player, step notes, branch choices, restart, zoom and minimap stay available. Use left/right arrows to navigate, Home to return to the beginning of the current path, and Exit or Escape to return to the workspace. Guided walkthroughs still require a choice at the cache failure. Playback position carries back to the workspace; presentation does not edit the draft.
+
+The optional **Full Screen** button also hides browser chrome where the browser supports it. Browser Escape may leave native full screen first; use Exit to close the presentation. Small screens stack the graph and player, with automatic initial fit and zoom for closer inspection. No account or new dependencies are required. Browser coverage lives in tests/presentation.spec.ts.

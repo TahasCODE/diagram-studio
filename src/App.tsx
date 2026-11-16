@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { Canvas } from './components/Canvas';
 import { Editor } from './components/Editor';
 import { Playback } from './components/Playback';
+import { Presentation } from './components/Presentation';
+import type { GuidedPlayback } from './components/Playback';
 import { Dialog } from './components/Dialog';
 import { RevisionComparison } from './components/RevisionComparison';
 import { ConflictRecovery } from './components/ConflictRecovery';
@@ -93,7 +95,7 @@ export default function App() {
   const [viewerError, setViewerError] = useState('');
   const readOnly = !!publicationId || initial.shared;
   const [dark, setDark] = useState(() => { try { return localStorage.getItem(STORAGE_KEY+'-theme') === 'dark'; } catch { return false; } });
-  const [modal, setModal] = useState<'account'|'auth'|'projects'|'confirm'|'share'|'history'|'activity'|'recovery'|null>(null);
+  const [modal, setModal] = useState<'account'|'auth'|'projects'|'confirm'|'share'|'history'|'activity'|'recovery'|'presentation'|null>(null);
   const [panel, setPanel] = useState<Panel>('playback');
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
   const [revisionLoading, setRevisionLoading] = useState(false);
@@ -401,6 +403,12 @@ export default function App() {
 
   if (viewerLoading || viewerError) return <div className="page-state"><h1>Diagram Studio</h1><p role="status">{viewerLoading ? 'Loading Published Diagram…' : viewerError}</p>{viewerError && <a href="/">Open Your Workspace</a>}{viewerLoading&&<div aria-hidden="true"><div className="skeleton"/><div className="skeleton"/><div className="skeleton"/></div>}</div>;
 
+  const guidedPlayback:GuidedPlayback|undefined=walkthroughMode?{
+            started:walkthroughStarted,chosen:walkthroughChosen,choiceStep:CACHE_CHOICE_STEP,
+            onStart:()=>{setWalkthroughStarted(true);setStep(0);},
+            onChoose:index=>{setScenario(index);setWalkthroughChosen(true);setStep(CACHE_CHOICE_STEP+1);},
+            onRestart:()=>{setScenario(0);setStep(0);setWalkthroughChosen(false);setWalkthroughStarted(false);},
+          }:undefined;
   return <>
     <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={walkthroughMode&&!walkthroughChosen?'Read request · Cache outage':document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length} initialInspectorOpen={walkthroughMode}
       readOnly={readOnly} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
@@ -420,12 +428,7 @@ export default function App() {
       sidebar={<>
         <div id="panel-playback" role="tabpanel" aria-labelledby="tab-playback" hidden={panel!=='playback'}>
           {!walkthroughMode&&<a className="walkthrough-entry" href="/?walkthrough=cache-outage"><span className="section-overline">FEATURED WALKTHROUGH</span><strong>What happens when the cache goes down?</strong><span>Make the call at a Redis failure. Two outcomes. No account needed. <Icon name="right" size={14}/></span></a>}
-          <Playback document={document} scenario={scenario} step={step} readOnly={readOnly} onScenario={onScenario} onStep={goToStep} guided={walkthroughMode?{
-            started:walkthroughStarted,chosen:walkthroughChosen,choiceStep:CACHE_CHOICE_STEP,
-            onStart:()=>{setWalkthroughStarted(true);setStep(0);},
-            onChoose:index=>{setScenario(index);setWalkthroughChosen(true);setStep(CACHE_CHOICE_STEP+1);},
-            onRestart:()=>{setScenario(0);setStep(0);setWalkthroughChosen(false);setWalkthroughStarted(false);},
-          }:undefined}/>
+          {modal!=='presentation'&&<Playback document={document} scenario={scenario} step={step} readOnly={readOnly} onScenario={onScenario} onStep={goToStep} guided={guidedPlayback}/>}
           <div className="panel-note"><Icon name="branch" size={16}/><p>Each scenario follows a different path through the same diagram.</p></div>
         </div>
         {!readOnly && <>
@@ -441,7 +444,7 @@ export default function App() {
         </>}
       </>}
     >
-      <Canvas document={document} scenario={scenario} step={step} selected={selected} readOnly={readOnly} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>
+      {modal!=='presentation'&&<Canvas onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={readOnly} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
     </WorkspaceShell>
 
     {modal === 'confirm' && confirmDetails && <Dialog title={confirmDetails.title} onClose={() => setModal(null)}><p className="dialog-copy">{confirmDetails.message}</p><div className="actions"><button className="primary" onClick={() => { setModal(null); confirmDetails.action(); }}>Continue</button><button onClick={() => setModal(null)}>Cancel</button></div></Dialog>}
@@ -494,6 +497,7 @@ export default function App() {
       {revisionPreview && <><section className="revision-preview"><p className="section-overline">VERSION {revisionPreview.version} PREVIEW</p><h3>{revisionPreview.title}</h3><p>{revisionPreview.document.nodes.length} nodes · {revisionPreview.document.scenarios.length} scenarios</p><ul>{revisionPreview.document.scenarios.map((s,i) => <li key={i}>{s.name}<span>{s.steps.length} steps</span></li>)}</ul></section><RevisionComparison before={revisionPreview.document} after={document} version={revisionPreview.version} currentVersion={active!.version} unsaved={cloudDirty}/></>}
       <p className="hint">The latest 100 saved versions are listed. For projects created before version history was added, tracking starts from the migration baseline.</p>
     </Dialog>}
+    {modal==='presentation'&&<Presentation document={document} scenario={scenario} step={step} guided={guidedPlayback} onScenario={onScenario} onStep={goToStep} onClose={()=>setModal(null)}/>}
     {modal==='activity'&&<Dialog title={activityProject?'Project Activity':'Account Activity'} onClose={() => setModal(null)}><p className="dialog-copy">A server-recorded history of successful project actions. Deleted-project events remain in your account activity.</p>{activityLoading&&<p role="status">Loading activity…</p>}{activityError&&<p className="form-error" role="alert">{activityError}</p>}{!activityLoading&&!activityError&&activity?.items.length===0&&<p className="hint">No activity recorded yet.</p>}<ul className="activity-list">{activity?.items.map(event=><li key={event.id}><strong>{event.action.split('_').map(word=>word.charAt(0)+word.slice(1).toLowerCase()).join(' ')}{event.version&&<span>Version {event.version}</span>}</strong><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString()}</time></li>)}</ul>{activity&&activity.totalPages>0&&<div className="page-controls"><button disabled={activityLoading||activity.page===0} onClick={() => loadActivity(activity.page-1,activityProject)}>Previous</button><span>Page {activity.page+1} of {activity.totalPages}</span><button disabled={activityLoading||activity.page+1>=activity.totalPages} onClick={() => loadActivity(activity.page+1,activityProject)}>Next</button></div>}</Dialog>}
   </>;
 }
