@@ -62,3 +62,8 @@ describes that snapshot; it does not imply earlier releases or pull requests.
 
 ## Playback visual polish
 - Refined the current-step card with a separate progress badge, clear node headline and a subtle brand accent in both themes. Playback behavior is unchanged.
+
+## Email-free guest deployment
+- Added an explicit account-disabled deployment mode with server-side account/draft guards and browser capability discovery.
+- Preserved local editing, snapshot links, export, remix and presentation; full account mode remains the default.
+- Added guest-mode integration/browser checks and updated the session API contract.

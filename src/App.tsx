@@ -16,7 +16,7 @@ import { examples } from './lib/examples';
 import { CACHE_CHOICE_STEP,cacheWalkthrough } from './lib/cacheWalkthrough';
 import { exportProject, historyReducer, parseDiagram, publishedDocument, readProjectFile, STORAGE_KEY } from './lib/model';
 import type { Diagram } from './lib/model';
-import { ApiError, request, saveProject, session } from './lib/api';
+import { ApiError, request, saveProject, session, accountFeaturesEnabled } from './lib/api';
 import type { Account, Draft, ProjectSummary, Publication, PublicationSummary, RevisionSummary, Revision, PageResponse, AuditEvent } from './lib/api';
 
 const remix = new URLSearchParams(location.search).has('remix');
@@ -77,6 +77,7 @@ export default function App() {
   const [walkthroughChosen,setWalkthroughChosen]=useState(false);
   const step = Math.max(0, Math.min(stepState, document.scenarios[scenario].steps.length-1));
   const [selected, setSelected] = useState<string | undefined>(document.nodes[0]?.id);
+  const [accountsEnabled,setAccountsEnabled]=useState(true);
   const [user, setUser] = useState<Account | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [apiOnline, setApiOnline] = useState(true);
@@ -126,11 +127,11 @@ export default function App() {
   const cloudDirty = active ? active.savedJson !== JSON.stringify(document) : true;
 
   useEffect(() => {
-    if(walkthroughMode){setSessionReady(true);return;}
+
     let cancelled = false;
     session().then(account => {
       if (cancelled) return;
-      setUser(account); setApiOnline(true);
+      setAccountsEnabled(accountFeaturesEnabled());setUser(account); setApiOnline(true);
       if (account && !readOnly) {
         try {
           const cached = tabDraft ? tabDraft.active : JSON.parse(localStorage.getItem(cloudKey) || 'null');
@@ -193,7 +194,7 @@ export default function App() {
   const replaceLocalDocument = (next: Diagram) => {
     dispatch({type:'edit',document:next}); setActive(null); setScenario(0); setStep(0); setSelected(next.nodes[0]?.id); setCloudError(''); setNotice('Local workspace replaced. Use Undo to restore the previous diagram.');
   };
-  const openAuth = () => { setAuthError(''); setAuthMessage(''); setAuthSuccess(null); setAuthMode('login'); setModal('auth'); };
+  const openAuth = () => { if(!accountsEnabled){setNotice('Accounts are unavailable in this guest demo. Export JSON to back up your local work.');return;} setAuthError(''); setAuthMessage(''); setAuthSuccess(null); setAuthMode('login'); setModal('auth'); };
   const signOut=()=>confirm('Sign Out','Sign out of this browser? Your local diagram will remain on this device.',async()=>{
     setBusy(true);
     try{await request('/auth/logout','POST');await session();setUser(null);setActive(null);setCloudError('');setSaveConflict(null);setRecovery(null);setNotice('Signed out. Your local diagram remains on this device.');}
@@ -353,6 +354,7 @@ export default function App() {
   async function publish() {
     if (busy) return;
     if (readOnly) { setShareUrl(location.href); setPublications([]); setModal('share'); return; }
+    if(!accountsEnabled){const url=new URL('/',location.origin);url.hash=encodeURIComponent(JSON.stringify(publishedDocument(document)));setShareUrl(url.href);setPublications([]);setModal('share');return;}
     if (!user) { setNotice('Sign in to publish a permanent playback link. You can keep editing without an account.'); openAuth(); return; }
     setBusy(true);
     try {
@@ -399,7 +401,7 @@ export default function App() {
       }
     };
     window.addEventListener('keydown',saveShortcut);return()=>window.removeEventListener('keydown',saveShortcut);
-  },[busy,user,readOnly,active]);
+  },[busy,user,readOnly,active,accountsEnabled]);
 
   if (viewerLoading || viewerError) return <div className="page-state"><h1>Diagram Studio</h1><p role="status">{viewerLoading ? 'Loading Published Diagram…' : viewerError}</p>{viewerError && <a href="/">Open Your Workspace</a>}{viewerLoading&&<div aria-hidden="true"><div className="skeleton"/><div className="skeleton"/><div className="skeleton"/></div>}</div>;
 
@@ -411,18 +413,19 @@ export default function App() {
           }:undefined;
   return <>
     <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={walkthroughMode&&!walkthroughChosen?'Read request · Cache outage':document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length} initialInspectorOpen={walkthroughMode}
-      readOnly={readOnly} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
-      onProjects={loadProjects} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
+      readOnly={readOnly} guestDemo={!accountsEnabled} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
+      onProjects={()=>accountsEnabled?void loadProjects():setPanel('project')} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
       saveLabel={walkthroughMode?'Guest Walkthrough':readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
       onLogout={user?signOut:undefined}
       headerActions={<>
-        {user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Account Settings" onClick={() => setModal('account')}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>}
-        {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : <button id="save-online" title="Save Online (Ctrl/Cmd+S)" aria-label="Save Online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
-        <button id="share" title={readOnly?'Share Diagram':'Publish & Share'} className="primary" disabled={busy||!sessionReady} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':'Publish & Share'}</button>
+        {accountsEnabled&&(user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Account Settings" onClick={() => setModal('account')}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>)}
+        {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : accountsEnabled&&<button id="save-online" title="Save Online (Ctrl/Cmd+S)" aria-label="Save Online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
+        <button id="share" title={readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'} className="primary" disabled={busy||!sessionReady} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'}</button>
       </>}
       banners={<>
+        {!accountsEnabled&&<div className="app-banner" role="status">Guest Demo: edits save in this browser. Accounts, online saving and permanent publishing are unavailable. Export JSON to keep a backup.</div>}
         {!readOnly&&document.scenarios.some(s=>s.review?.length)&&<div className="app-banner impact-banner" role="status"><span>{document.scenarios.filter(s=>s.review?.length).length} scenario{document.scenarios.filter(s=>s.review?.length).length===1?'':'s'} need review after node edits.</span><button onClick={()=>{setPanel('editor');setTimeout(()=>globalThis.document.getElementById('scenario-impact')?.scrollIntoView({block:'start'}),200);}}>Review Scenario Impact</button></div>}
-        {!apiOnline && <div className="app-banner" role="status">Project storage is offline. Your local workspace is available.<button onClick={() => {session().then(account => {setUser(account);setApiOnline(true);}).catch(() => setNotice('Project storage is still unavailable.'));}}>Reconnect</button></div>}
+        {!apiOnline && <div className="app-banner" role="status">Project storage is offline. Your local workspace is available.<button onClick={() => {session().then(account => {setAccountsEnabled(accountFeaturesEnabled());setUser(account);setApiOnline(true);}).catch(() => setNotice('Project storage is still unavailable.'));}}>Reconnect</button></div>}
         {cloudError && <div className="app-banner error-banner" role="alert">{cloudError}{saveConflict&&active?.id===saveConflict.id&&active.version===saveConflict.version&&<button disabled={busy} onClick={()=>void loadRecovery()}>Review Changes</button>}<button disabled={busy} onClick={() => saveClick(true)}>Save as Separate Copy</button><button onClick={() => {setCloudError('');setSaveConflict(null);}}>Dismiss</button></div>}
       </>}
       sidebar={<>

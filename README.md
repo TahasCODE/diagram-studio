@@ -250,3 +250,12 @@ Verification: image export unit tests cover text escaping, background/playback o
 Click the play icon (**Present Diagram**) in the canvas toolbar for a read-only, viewport-filling presentation. The existing scenario player, step notes, branch choices, restart, zoom and minimap stay available. Use left/right arrows to navigate, Home to return to the beginning of the current path, and Exit or Escape to return to the workspace. Guided walkthroughs still require a choice at the cache failure. Playback position carries back to the workspace; presentation does not edit the draft.
 
 The optional **Full Screen** button also hides browser chrome where the browser supports it. Browser Escape may leave native full screen first; use Exit to close the presentation. Small screens stack the graph and player, with automatic initial fit and zoom for closer inspection. No account or new dependencies are required. Browser coverage lives in tests/presentation.spec.ts.
+
+### Hosted guest mode
+
+The email-free public deployment uses ACCOUNTS_ENABLED=false. It supports local
+editing, guided playback, remixing, snapshot links, JSON/image export and
+presentation. Edits stay in the browser; export JSON for a backup. Sign-in,
+online saves, revision history and permanent server publishing are disabled in
+this mode. The default full-stack application and its account tests remain
+available locally. See docs/deployment.md for configuration and release checks.

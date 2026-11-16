@@ -11,6 +11,7 @@ interface Props {
   initialInspectorOpen?:boolean;
   walkthrough?:boolean;
   onLogout?:()=>void;
+  guestDemo?:boolean;
 }
 export function WorkspaceShell(props: Props) {
   const [compact,setCompact]=useState(()=>matchMedia('(max-width:1023px)').matches);
@@ -29,7 +30,7 @@ export function WorkspaceShell(props: Props) {
   return <>
     <header className="app-header" inert={compact&&inspectorOpen}>
       <a className="brand" href="/" aria-label="Diagram Studio Home"><span className="brand-mark"><Icon name="diagram" size={21}/></span><h1>Diagram Studio</h1></a>
-      <div className="header-divider"/><span className="header-context">{props.walkthrough?'Guided walkthrough':props.readOnly?'Published diagram':props.isRemix?'Remix workspace':'Personal Workspace'}</span>
+      <div className="header-divider"/><span className="header-context">{props.walkthrough?'Guided walkthrough':props.guestDemo?'Guest Demo':props.readOnly?'Published diagram':props.isRemix?'Remix workspace':'Personal Workspace'}</span>
       <div className="actions header-actions"><span id="save-state" className={'save-state'+(props.saveError?' save-error':'')} role="status"><span className="status-dot"/>{props.saveLabel}</span>
         {props.onLogout&&<button id="header-logout" className="quiet-button" aria-label="Log Out" title="Log Out" disabled={props.busy} onClick={props.onLogout}><Icon name="logout" size={16}/><span>Log Out</span></button>}
         <button id="theme-toggle" className="icon-button" aria-label={props.dark?'Use Light Theme':'Use Dark Theme'} title={props.dark?'Light Theme':'Dark Theme'} aria-pressed={props.dark} onClick={props.onTheme}><Icon name={props.dark?'sun':'moon'}/></button>
@@ -49,7 +50,7 @@ export function WorkspaceShell(props: Props) {
         <div className="workspace" inert={compact&&inspectorOpen} onClick={event=>{if(compact&&(event.target as HTMLElement).closest('.node'))setInspectorOpen(true);}}>
           <div className="workspace-heading"><div className="workspace-title"><p className="eyebrow">{props.walkthrough?'INTERACTIVE WALKTHROUGH':props.readOnly?'PUBLISHED DIAGRAM':'DIAGRAM WORKSPACE'}</p><h2 id="project-heading">{props.title}</h2><p className="workspace-description"><span className="metadata-chip"><span className="scenario-dot"/>{props.scenarioName}</span><span className="metadata-chip">{props.stepCount} path steps</span><span className="metadata-chip">{props.nodeCount} diagram nodes</span></p></div><span className="canvas-badge"><span/>{props.walkthrough?'Interactive demo':'Live Canvas'}</span><button className="inspector-trigger" aria-expanded={inspectorOpen} aria-controls="diagram-inspector" onClick={()=>setInspectorOpen(!inspectorOpen)} title="Open Inspector"><Icon name="sliders" size={16}/><span>Inspector</span></button></div>
           {props.children}
-          <div className="workspace-footer"><span>{props.nodeCount} nodes<span className="footer-separator"/> {props.scenarioCount} scenarios{props.version && <><span className="footer-separator"/>Version {props.version}</>}</span><span>{props.readOnly?'Read-only playback':'Changes stay local until saved online'}</span></div>
+          <div className="workspace-footer"><span>{props.nodeCount} nodes<span className="footer-separator"/> {props.scenarioCount} scenarios{props.version && <><span className="footer-separator"/>Version {props.version}</>}</span><span>{props.readOnly?'Read-only playback':props.guestDemo?'Stored only in this browser':'Changes stay local until saved online'}</span></div>
         </div>
         {compact&&inspectorOpen&&<button className="inspector-backdrop" aria-label="Close Inspector Backdrop" tabIndex={-1} onClick={()=>setInspectorOpen(false)}/>}
         <aside ref={inspector} id="diagram-inspector" className={'inspector'+(inspectorOpen?' is-open':'')} role={compact&&inspectorOpen?'dialog':undefined} aria-modal={compact&&inspectorOpen?true:undefined} aria-label="Diagram Controls" inert={compact&&!inspectorOpen} onTransitionEnd={event=>{if(event.target===event.currentTarget&&compact&&inspectorOpen&&!inspector.current?.contains(document.activeElement))inspector.current?.querySelector<HTMLButtonElement>('.inspector-close')?.focus();}} onKeyDown={event=>{
