@@ -1,5 +1,10 @@
 # Java backend engineering notes
 
+**Deployment scope:** the full backend is preserved. Accounts default to enabled
+(`ACCOUNTS_ENABLED=true`) locally. Only the public Render guest demo sets this to
+false: account/private API routes are denied and email is not required. This
+document describes the full application unless a section explicitly says guest.
+
 This application is a Java 25 / Spring Boot modular monolith. It uses Spring
 MVC, Security, JDBC, Session JDBC, Actuator, Micrometer, PostgreSQL and Flyway.
 It deliberately keeps ownership, validation and transactions on the server.

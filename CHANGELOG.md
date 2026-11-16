@@ -71,3 +71,8 @@ describes that snapshot; it does not imply earlier releases or pull requests.
 ## Public guest demo release
 - Published the verified Render/Neon guest demo link and CI badge, with clear hosted feature limits and release evidence.
 - Hide account controls until server capabilities load to prevent a Sign In flash in the guest demo.
+
+## Clarify full project versus hosted guest demo
+- Preserve all account/backend features; document that only the public deployment disables them.
+- Correct stale deployment statements and qualify account instructions, API/engineering notes and portfolio claims.
+- Explain unavailable online/history actions and browser-generated snapshot links in the hosted UI.

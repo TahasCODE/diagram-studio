@@ -6,10 +6,15 @@ Repository: https://github.com/TahasCODE/diagram-studio
 
 Local demo: http://localhost:8090/?walkthrough=cache-outage
 
-No public demo URL is available yet. Run `npm.cmd start` from the project folder
-and wait for startup; PowerShell users should use `npm.cmd` when `npm.ps1` is
-blocked. Publishing the service needs separate hosting/cost approval and the
-[post-deploy checks](deployment.md). Do not label localhost a live public demo.
+Public guest demo: https://diagram-studio-demo.onrender.com/?walkthrough=cache-outage
+
+The hosted demo has no registration, sign-in, email verification/recovery, online
+saves, revision history or permanent server publishing. It supports local editing,
+playback, remix, snapshot links, export and presentation. The full Java/PostgreSQL
+account system remains in the project, enabled by default locally and verified
+in integration/browser tests. Clearly distinguish those full-version features
+from what a recruiter can try on the public guest link. Free hosting can wake
+slowly after inactivity. See the [release checks](deployment.md).
 
 Use a fresh guest browser at desktop width for the following script. It needs no
 account, verified email, prepared saved project or artificial API responses.
@@ -17,7 +22,7 @@ The cache outage is an interactive explanation, not a live infrastructure fault.
 
 ## 60–90 second demo — target 85 seconds
 
-1. **0–8 seconds:** Open the local demo link (or the approved hosted equivalent).
+1. **0–8 seconds:** Open the public guest demo link above.
    Click **Start Walkthrough**. Say: “Diagram Studio lets readers explore different
    outcomes on the same technical diagram. This example follows a read request
    when Redis goes down.”
@@ -38,11 +43,13 @@ The cache outage is an interactive explanation, not a live infrastructure fault.
    remix; changing it does not change the example.”
 6. **72–85 seconds:** Click **Project**, then **Export Project** and accept the
    JSON download if prompted. Say: “Local work can be exported without an account.
-   Signed-in authors also get version-checked saves, revision restore and fixed
-   publication links. The repository includes tests and a reproducible playback
+   The full application also implements version-checked saves, revision restore
+   and fixed publication links; those account features are not enabled on this
+   hosted guest demo. The repository includes tests and a reproducible playback
    benchmark for those engineering claims.”
 
-For an interview follow-up, demonstrate publication/restore and the two-tab
+For an interview follow-up, run the full application locally to demonstrate
+publication/restore and the two-tab
 conflict recovery using [the engineering story](engineering-story.md). Do not
 try to register, wait for email and explain every backend feature inside the
 85-second guest demo. Rehearse the actual clicks before recording; timing is a
@@ -112,5 +119,6 @@ traffic, multi-replica operation and production SMTP delivery are not establishe
   [conditions and limitations](../benchmarks/README.md) must accompany discussion.
 
 Use these as project bullets, not employment experience. Link to the public
-repository now; add a hosted demo link only after deployment and smoke verification.
+repository and the verified public guest demo. Account/persistence bullets describe
+the complete project and its tests, not features enabled on the hosted guest demo.
 No PDF or existing CV file is edited by this document.

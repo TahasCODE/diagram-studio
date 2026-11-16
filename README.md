@@ -36,7 +36,7 @@ benchmark; the example 50 ms budget is explicitly illustrative.
 Start the app using the instructions below, then open the link. The same entry is
 featured in the app's Playback inspector. For Vite development, use
 `http://localhost:5173/?walkthrough=cache-outage`. The walkthrough's relative path
-is `/?walkthrough=cache-outage` on any future deployment; no public demo is deployed yet.
+is `/?walkthrough=cache-outage` on both the live guest demo and local application.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, pull request and verification
 workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new changes.
@@ -44,6 +44,11 @@ workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new c
 For the verified publication, revision and concurrent-save design, see
 [the engineering story](docs/engineering-story.md), including an interview-ready
 decision and steps to reproduce the two-tab recovery flow.
+
+**Full application only:** the following account instructions apply locally or
+on a separately configured full deployment. The public guest demo does not offer
+registration, sign-in, email codes or password recovery. The implementation remains
+in this repository and accounts are enabled by default locally.
 
 Account creation requires an email code. Configure [Gmail SMTP or the local test
 mailbox](docs/email-setup.md) before registering an account.
@@ -116,7 +121,7 @@ at port 8090. `scripts/backend.ps1` chooses a JDK for this process and uses Mave
 or its wrapper without changing system Java settings. On other operating systems,
 use PostgreSQL or `docker compose up db`, then `cd backend && ./mvnw spring-boot:run`.
 
-## Create, publish, and remix
+## Create, publish, and remix (full application)
 
 1. Open an example or build a diagram. Local edits save automatically in this
    browser, with undo/redo, branching scenarios, node notes, and review flags.
@@ -144,7 +149,7 @@ Opening another saved project or creating a blank project starts fresh history.
 Signing out clears the current local workspace after confirmation. A project
 delete revokes all its published links; a scenario delete is undoable.
 
-## Data and API
+## Data and API (full application)
 
 The workspace has separate **Playback**, **Editor**, and **Project** inspector
 tabs. Select a node to open the editor. Example projects, JSON files and online
@@ -238,9 +243,12 @@ UI and API from one origin. Use a strong database password, persistent database
 storage, backups, and an ingress limit for authentication requests. Publish links
 only after the public host is live; localhost links work only on your computer.
 
-This is a functioning first application release. Email verification, password
-recovery, collaborative editing, and an administrative console are not included.
-No hosting account has been created or public deployment performed.
+The public guest demo is deployed on free Render hosting with dedicated Neon
+PostgreSQL. The complete project retains verified accounts, password recovery,
+private saves, revision history and immutable publications. Those account-backed
+features are deliberately disabled only on the public guest deployment; they
+remain available in a properly configured local/self-hosted full application.
+Real-time collaboration and an administrative console are not implemented.
 
 Framework references: [React + Vite](https://react.dev/learn/build-a-react-app-from-scratch),
 [Spring Boot requirements](https://docs.spring.io/spring-boot/system-requirements.html),
