@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a signed-in header Log Out control next to the save status, using the existing confirmation and preserving the local diagram.
+
 - Add three-way save-conflict review with explicit field choices, safe non-overlapping merges, structural/size validation, local backup/copy recovery and version-checked reviewed saves.
 
 - Add visual saved-revision versus current-draft comparison with graph highlights, field details, unsaved-edit awareness and read-only comparison checks.

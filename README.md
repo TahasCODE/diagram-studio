@@ -42,6 +42,8 @@ mailbox](docs/email-setup.md) before registering an account.
 After signing in, open your name in the header for **Account Settings**. You can
 edit your display name, change your password, review recent security activity or
 sign out every device. Password changes sign out all sessions; local diagrams remain.
+Use **Log Out** next to the header's save status to sign out this browser while
+keeping the local diagram. On narrow screens, the control uses a logout icon.
 
 Use **Forgot Password?** to recover a verified account through email. To run with
 real Gmail delivery, use `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-gmail.ps1`
