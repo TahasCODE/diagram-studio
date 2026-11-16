@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add three-way save-conflict review with explicit field choices, safe non-overlapping merges, structural/size validation, local backup/copy recovery and version-checked reviewed saves.
+
 - Add visual saved-revision versus current-draft comparison with graph highlights, field details, unsaved-edit awareness and read-only comparison checks.
 
 - Prepare deployment/smoke instructions and evidence-backed portfolio materials; include theme assets and SMTP settings in container deployment, test production guards, and smoke-check packaged/container releases in CI.

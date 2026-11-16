@@ -25,6 +25,19 @@ version. A stale version receives HTTP 409; the client does not silently retry
 with the newest version. It retains the local edits and offers **Save as Separate
 Copy** so the author can reconcile the two projects deliberately.
 
+**Review Changes** now offers a three-way recovery against the shared saved
+revision and a fetched server draft. The pure `conflictMerge.ts` engine combines
+non-overlapping node fields, but requires explicit choices for conflicting values
+and delete-versus-reference dependencies. Scenarios are a whole-set choice when
+both writers change them: their names are not stable identities across renames.
+Invalid references, graph limits and combined request size block saving rather
+than dropping steps. The reviewed result goes through the same optimistic update
+using the fetched server version. If another writer saves first, the reviewed save receives 409;
+refresh resets choices, and neither cancellation nor a failed write advances the
+tab's original base. `tests/conflicts.spec.ts` exercises two real tabs, another
+writer during review, local preservation across reload, backups and separate-copy
+recovery. No new publication or privileged overwrite endpoint is involved.
+
 The two-tab regression exposed a refresh bug: shared browser storage could combine
 one tab's edits with another tab's newer version. Each tab now keeps its diagram
 and original version metadata together in session storage. Refreshing that tab

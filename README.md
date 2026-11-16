@@ -171,6 +171,19 @@ Concurrent saves return 409 instead of overwriting another session's edits.
 The UI keeps the local document and offers **Save as Separate Copy**. Private
 project endpoints require ownership and use 404 for other users' IDs.
 
+Choose **Review Changes** after a stale save to resolve it against the shared
+saved revision and a fetched server snapshot. Non-conflicting edits are combined;
+conflicting titles, node labels, notes, positions, additions/deletions and scenario
+sets require explicit choices. Expand **Compare local and server diagrams** for
+the visual comparison. **Save Reviewed Merge** uses the fetched server version,
+so another intervening save still returns 409 and requires a fresh review.
+Cancel leaves the original local draft and its old version intact; a local JSON
+backup and separate-copy save remain available. Recovery does not publish anything.
+
+Scenario sets are chosen as a whole when both tabs change them because scenarios
+do not yet have stable IDs. Invalid step references, combined project limits and
+the request-size limit block a reviewed save; recovery never silently drops steps.
+
 See `api/openapi.json` and `api/contract.md`. Rebuild the machine-readable contract
 with `node scripts/generate-openapi.mjs` after changing its source. JSON requests
 and file imports are limited to 1 MB; documents support 500 nodes, 100 scenarios,
