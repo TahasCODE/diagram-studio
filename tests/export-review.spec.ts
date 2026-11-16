@@ -1,5 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { examples } from '../src/lib/examples';
+import { readFileSync } from 'node:fs';
+const securitySource=readFileSync('backend/src/main/java/com/diagramstudio/SecurityConfiguration.java','utf8');
+const contentSecurityPolicy=securitySource.match(/policyDirectives\("([^"]+)"\)/)?.[1].match(/img-src[^;]+/)?.[0];
+if(!contentSecurityPolicy)throw new Error('Could not read the application image security policy.');
+test.beforeEach(async({page})=>{
+  page.setDefaultTimeout(10000);
+  // Exercise the exact packaged image directive. Vite's inline development preamble
+  // needs a different script policy, so do not copy unrelated directives here.
+  await page.route('**/*',async route=>{
+    if(route.request().resourceType()!=='document'){await route.continue();return;}
+    const response=await route.fetch();
+    await route.fulfill({response,headers:{...response.headers(),'content-security-policy':contentSecurityPolicy!}});
+  });
+});
 test('guest exports portable SVG/PNG and reviews affected paths without losing edits',async({page})=>{
   await page.route('https://fonts.googleapis.com/**',route=>route.abort());
   await page.addInitScript(project=>localStorage.setItem('diagram-studio-v1',JSON.stringify(project)),examples.refund);
