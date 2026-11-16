@@ -43,3 +43,7 @@ describes that snapshot; it does not imply earlier releases or pull requests.
 - Versioned drafts, immutable publications, revision history and restoration.
 - Audit events, request tracing, operational endpoints and production configuration checks.
 - Frontend, Java, database integration, API and browser regression checks, plus CI.
+
+## Diagram images and scenario impact review
+- Added guest-accessible SVG/PNG downloads with preview, transparent backgrounds, light/dark appearance and playback highlighting. No new dependencies.
+- Extended the existing scenario review notes into a discoverable workspace queue, per-path acknowledgement and direct step playback. Existing JSON persistence and publication isolation are reused.

@@ -236,3 +236,11 @@ No hosting account has been created or public deployment performed.
 Framework references: [React + Vite](https://react.dev/learn/build-a-react-app-from-scratch),
 [Spring Boot requirements](https://docs.spring.io/spring-boot/system-requirements.html),
 [JDBC-backed sessions](https://docs.spring.io/spring-session/reference/guides/boot-jdbc.html).
+
+### Diagram images and scenario impact
+
+Use **Export** in the canvas toolbar to preview and download SVG or PNG without an account. Choose light/dark appearance, a transparent background, and either the whole graph or current playback highlighting. The image uses a consistent 1440 ? 900 layout independent of canvas zoom (PNG is rendered at 2?). Labels, routes, and branch captions are included; it is a portable diagram image, not a screenshot of the editor. Export JSON from Project tools to preserve the editable project and notes.
+
+Rename, edit notes, or delete a shared node to flag every affected scenario. **Review Scenario Impact** opens the editor's review queue. Read the reasons, choose a remaining step to inspect in playback, then mark that path reviewed. Deleted nodes are removed from paths automatically; review the remaining path rather than a broken reference. Review notes persist with drafts, support undo, and are omitted from immutable publications. Moving nodes does not require a content review.
+
+Verification: image export unit tests cover text escaping, background/playback options and empty paths. Browser coverage in tests/export-review.spec.ts checks guest SVG/PNG downloads, review persistence and undo, plus export at 1440, 1024 and 390px.
