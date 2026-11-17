@@ -48,6 +48,10 @@ is `/?walkthrough=cache-outage` on both the live guest demo and local applicatio
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, pull request and verification
 workflow, and [CHANGELOG.md](CHANGELOG.md) for the repository baseline and new changes.
 
+The full local application also supports [shared projects and member invitations](docs/collaboration.md)
+with Owner, Editor and Viewer permissions. The public guest deployment remains
+unchanged and does not enable collaboration or account access.
+
 For the verified publication, revision and concurrent-save design, see
 [the engineering story](docs/engineering-story.md), including an interview-ready
 decision and steps to reproduce the two-tab recovery flow.

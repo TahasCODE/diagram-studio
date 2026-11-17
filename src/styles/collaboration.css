@@ -1,0 +1,11 @@
+.collaboration-section{border-top:1px solid var(--line);padding-top:16px;margin-top:20px}
+.collaboration-section h3{margin:0 0 8px;font-size:16px}
+.collaboration-invite{display:grid;gap:8px;margin:16px 0}
+.collaboration-invite button{justify-self:start;margin-top:8px}
+.collaboration-list{list-style:none;padding:0;margin:16px 0}
+.collaboration-list li{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.collaboration-list strong,.collaboration-list span,.collaboration-list small{display:block;overflow-wrap:anywhere}
+.collaboration-list span,.collaboration-list small{font-size:12px;color:var(--muted);margin-top:4px}
+.collaboration-actions{display:flex;gap:8px;flex-wrap:wrap}
+.collaboration-message{padding:12px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+@media(max-width:600px){.collaboration-list li{align-items:flex-start;flex-direction:column}.collaboration-actions{width:100%}}

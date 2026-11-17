@@ -9,6 +9,7 @@ import { Dialog } from './components/Dialog';
 import { RevisionComparison } from './components/RevisionComparison';
 import { ConflictRecovery } from './components/ConflictRecovery';
 import { AccountSettings } from './components/AccountSettings';
+import { Collaboration } from './components/Collaboration';
 import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
 import { Icon } from './components/Icon';
@@ -17,7 +18,7 @@ import { CACHE_CHOICE_STEP,cacheWalkthrough } from './lib/cacheWalkthrough';
 import { exportProject, historyReducer, parseDiagram, publishedDocument, readProjectFile, STORAGE_KEY } from './lib/model';
 import type { Diagram } from './lib/model';
 import { ApiError, request, saveProject, session, accountFeaturesEnabled } from './lib/api';
-import type { Account, Draft, ProjectSummary, Publication, PublicationSummary, RevisionSummary, Revision, PageResponse, AuditEvent } from './lib/api';
+import type { Account, Draft, ProjectSummary, ProjectRole, Publication, PublicationSummary, RevisionSummary, Revision, PageResponse, AuditEvent } from './lib/api';
 
 const remix = new URLSearchParams(location.search).has('remix');
 const localKey = STORAGE_KEY + (remix ? '-remix' : '');
@@ -25,7 +26,7 @@ const cloudKey = localKey + '-cloud';
 const tabKey = localKey + '-tab';
 const publicationId = location.pathname.match(/^\/p\/([a-f0-9-]{36})\/?$/i)?.[1];
 const walkthroughMode=!publicationId&&new URLSearchParams(location.search).get('walkthrough')==='cache-outage';
-interface CloudDraft { id: string; version: number; ownerId: string; savedJson: string }
+interface CloudDraft { id: string; version: number; ownerId: string; savedJson: string; role?: ProjectRole }
 interface Recovery {source:CloudDraft;base:Diagram;local:Diagram;server:Draft}
 // Keep the document and its optimistic-lock base together across this tab's reloads.
 // Shared localStorage alone can pair a stale edit with another tab's newer version.
@@ -82,6 +83,8 @@ export default function App() {
   const [sessionReady, setSessionReady] = useState(false);
   const [apiOnline, setApiOnline] = useState(true);
   const [active, setActive] = useState<CloudDraft | null>(null);
+  const [collaboration,setCollaboration]=useState<{project:{id:string;title:string;role:ProjectRole}|null}|null>(null);
+  const projectViewer=active?.role==='VIEWER';
   const [localSaved, setLocalSaved] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNoticeText] = useState(initial.message);
@@ -95,6 +98,7 @@ export default function App() {
   const [viewerLoading, setViewerLoading] = useState(!!publicationId);
   const [viewerError, setViewerError] = useState('');
   const readOnly = !!publicationId || initial.shared;
+  const editable=!readOnly&&!projectViewer;
   const [dark, setDark] = useState(() => { try { return localStorage.getItem(STORAGE_KEY+'-theme') === 'dark'; } catch { return false; } });
   const [modal, setModal] = useState<'account'|'auth'|'projects'|'confirm'|'share'|'history'|'activity'|'recovery'|'presentation'|null>(null);
   const [panel, setPanel] = useState<Panel>('playback');
@@ -125,6 +129,17 @@ export default function App() {
   const fileRef = useRef<HTMLInputElement>(null);
   const pendingFile = useRef<Diagram | null>(null);
   const cloudDirty = active ? active.savedJson !== JSON.stringify(document) : true;
+
+  useEffect(()=>{
+    if(!user||!active||readOnly)return;
+    let cancelled=false;const id=active.id;
+    request<Draft>('/projects/'+id).then(draft=>{
+      if(!cancelled)setActive(previous=>previous?.id===id?{...previous,role:draft.role??'OWNER'}:previous);
+    }).catch(error=>{
+      if(!cancelled){setCloudError(errorMessage(error));setActive(previous=>previous?.id===id?{...previous,role:'VIEWER'}:previous);}
+    });
+    return()=>{cancelled=true;};
+  },[user?.id,active?.id,readOnly]);
 
   useEffect(() => {
 
@@ -256,11 +271,12 @@ export default function App() {
   }
   async function saveOnline(copy = false): Promise<Draft | null> {
     if (!user) { openAuth(); return null; }
+    if(!copy&&projectViewer)throw new Error('Viewer access does not allow online changes. Save a separate copy or ask the owner for Editor access.');
     const snapshot = structuredClone(documentRef.current);
     let draft:Draft;
     try{draft=await saveProject(snapshot,copy ? null : active);}
     catch(error){if(!copy&&active&&error instanceof ApiError&&error.status===409)setSaveConflict(active);throw error;}
-    setActive({id:draft.id,version:draft.version,ownerId:user.id,savedJson:JSON.stringify(snapshot)});
+    setActive({id:draft.id,version:draft.version,ownerId:user.id,savedJson:JSON.stringify(snapshot),role:draft.role});
     setApiOnline(true); setCloudError('');setSaveConflict(null);
     return draft;
   }
@@ -289,7 +305,7 @@ export default function App() {
       // The fetched snapshot's version is the only allowed write base. Never
       // update active metadata or replace the local document before success.
       const draft=await saveProject(merged,{id:recovery.source.id,version:recovery.server.version});
-      openDocument(draft.document,{id:draft.id,version:draft.version,ownerId:user.id,savedJson:JSON.stringify(draft.document)});
+      openDocument(draft.document,{id:draft.id,version:draft.version,ownerId:user.id,savedJson:JSON.stringify(draft.document),role:draft.role});
       setSaveConflict(null);setRecovery(null);setModal(null);setNotice(`Conflict resolved and saved as version ${draft.version}. Previous revisions were retained.`);
     }catch(error){
       setRecoveryStale(true);
@@ -316,12 +332,12 @@ export default function App() {
     try {
       const draft = await request<Draft>('/projects/'+id);
       const next = parseDiagram(draft.document);
-      const source = {id:draft.id,version:draft.version,ownerId:user!.id,savedJson:JSON.stringify(next)};
+      const source = {id:draft.id,version:draft.version,ownerId:user!.id,savedJson:JSON.stringify(next),role:draft.role};
       if (readOnly) {
         sessionStorage.setItem(STORAGE_KEY+'-tab',JSON.stringify({document:next,active:source}));
         localStorage.setItem(STORAGE_KEY,JSON.stringify(next)); localStorage.setItem(STORAGE_KEY+'-cloud',JSON.stringify(source)); location.assign('/'); return;
       }
-      openDocument(next,source); setModal(null);
+      openDocument(next,source); if(draft.role==='VIEWER')setPanel('playback');setCollaboration(null);setModal(null);
     } catch(error) { setProjectListError(errorMessage(error)); } finally { setBusy(false); }
   }
   async function loadRevisions() {
@@ -346,7 +362,7 @@ export default function App() {
     try {
       const restored = await request<Draft>(`/projects/${active.id}/restore`,'POST',{version:active.version,revisionVersion:version});
       const next = parseDiagram(restored.document);
-      openDocument(next,{id:restored.id,version:restored.version,ownerId:user.id,savedJson:JSON.stringify(next)});
+      openDocument(next,{id:restored.id,version:restored.version,ownerId:user.id,savedJson:JSON.stringify(next),role:restored.role});
       setModal(null); setNotice(`Version ${version} restored as version ${restored.version}. All earlier versions were retained.`);
     } catch(error) { setCloudError(errorMessage(error)); setModal(null); }
     finally { setBusy(false); }
@@ -413,31 +429,33 @@ export default function App() {
           }:undefined;
   return <>
     <WorkspaceShell title={document.title || 'Untitled Diagram'} scenarioName={walkthroughMode&&!walkthroughChosen?'Read request · Cache outage':document.scenarios[scenario].name} stepCount={document.scenarios[scenario].steps.length} nodeCount={document.nodes.length} scenarioCount={document.scenarios.length} initialInspectorOpen={walkthroughMode}
-      readOnly={readOnly} guestDemo={sessionReady&&apiOnline&&!accountsEnabled} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
+      readOnly={!editable} projectRole={active?.role} guestDemo={sessionReady&&apiOnline&&!accountsEnabled} walkthrough={walkthroughMode} isRemix={remix} dark={dark} onTheme={() => setDark(!dark)} panel={panel} onPanel={setPanel}
       onProjects={()=>accountsEnabled?void loadProjects():readOnly?location.assign('/'):setPanel('project')} onHistory={loadRevisions} canHistory={!!active} version={active?.version} busy={busy}
       saveLabel={walkthroughMode?'Guest Walkthrough':readOnly?'Published Playback':!localSaved?'Local Save Failed':active&&!cloudDirty?'Saved Online':'Saved Locally'} saveError={!localSaved} notice={notice} noticeVersion={noticeVersion}
       onLogout={user?signOut:undefined}
       headerActions={<>
         {accountsEnabled&&(user ? <button className="account-button" disabled={busy} title={user.email} aria-label="Account Settings" onClick={() => setModal('account')}><span className="account-avatar">{user.name.slice(0,1).toUpperCase()}</span><span className="account-name">{user.name.split(' ')[0]}</span></button> : <button id="sign-in" className="quiet-button" disabled={!sessionReady||busy} onClick={openAuth}><Icon name="user" size={16}/>Sign In</button>)}
-        {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : accountsEnabled&&<button id="save-online" title="Save Online (Ctrl/Cmd+S)" aria-label="Save Online" disabled={busy||!sessionReady} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
-        <button id="share" title={readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'} className="primary" disabled={busy||!sessionReady} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'}</button>
+        {user&&!readOnly&&<button id="collaboration" disabled={busy} onClick={()=>{setModal(null);setCollaboration({project:active?{id:active.id,title:document.title||'Untitled Diagram',role:active.role??'OWNER'}:null});}}>Collaborate</button>}
+        {readOnly ? <button id="remix" disabled={busy} onClick={remixDiagram}><Icon name="branch" size={16}/>Remix Diagram</button> : accountsEnabled&&<button id="save-online" title="Save Online (Ctrl/Cmd+S)" aria-label="Save Online" disabled={busy||!sessionReady||projectViewer} onClick={() => saveClick()}><Icon name="save" size={16}/>{busy?'Saving…':'Save Online'}</button>}
+        <button id="share" title={readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'} className="primary" disabled={busy||!sessionReady||(!readOnly&&!!active&&active.role!==undefined&&active.role!=='OWNER')} onClick={publish}><Icon name="share" size={16}/>{readOnly?'Share Diagram':accountsEnabled?'Publish & Share':'Share Snapshot'}</button>
       </>}
       banners={<>
+        {projectViewer&&<div className="app-banner" role="status">Viewer access: explore this saved project without changing it.<button onClick={()=>void saveClick(true)}>Save as Separate Copy</button><button onClick={()=>void loadRevisions()}>View History</button></div>}
         {sessionReady&&apiOnline&&!accountsEnabled&&<div className="app-banner" role="status">Guest Demo: edits save in this browser. Accounts, online saving and permanent publishing are unavailable. Export JSON to keep a backup.</div>}
-        {!readOnly&&document.scenarios.some(s=>s.review?.length)&&<div className="app-banner impact-banner" role="status"><span>{document.scenarios.filter(s=>s.review?.length).length} scenario{document.scenarios.filter(s=>s.review?.length).length===1?'':'s'} need review after node edits.</span><button onClick={()=>{setPanel('editor');setTimeout(()=>globalThis.document.getElementById('scenario-impact')?.scrollIntoView({block:'start'}),200);}}>Review Scenario Impact</button></div>}
+        {editable&&document.scenarios.some(s=>s.review?.length)&&<div className="app-banner impact-banner" role="status"><span>{document.scenarios.filter(s=>s.review?.length).length} scenario{document.scenarios.filter(s=>s.review?.length).length===1?'':'s'} need review after node edits.</span><button onClick={()=>{setPanel('editor');setTimeout(()=>globalThis.document.getElementById('scenario-impact')?.scrollIntoView({block:'start'}),200);}}>Review Scenario Impact</button></div>}
         {!apiOnline && <div className="app-banner" role="status">Project storage is offline. Your local workspace is available.<button onClick={() => {session().then(account => {setAccountsEnabled(accountFeaturesEnabled());setUser(account);setApiOnline(true);}).catch(() => setNotice('Project storage is still unavailable.'));}}>Reconnect</button></div>}
         {cloudError && <div className="app-banner error-banner" role="alert">{cloudError}{saveConflict&&active?.id===saveConflict.id&&active.version===saveConflict.version&&<button disabled={busy} onClick={()=>void loadRecovery()}>Review Changes</button>}<button disabled={busy} onClick={() => saveClick(true)}>Save as Separate Copy</button><button onClick={() => {setCloudError('');setSaveConflict(null);}}>Dismiss</button></div>}
       </>}
       sidebar={<>
         <div id="panel-playback" role="tabpanel" aria-labelledby="tab-playback" hidden={panel!=='playback'}>
           {!walkthroughMode&&<a className="walkthrough-entry" href="/?walkthrough=cache-outage"><span className="section-overline">FEATURED WALKTHROUGH</span><strong>What happens when the cache goes down?</strong><span>Make the call at a Redis failure. Two outcomes. No account needed. <Icon name="right" size={14}/></span></a>}
-          {modal!=='presentation'&&<Playback document={document} scenario={scenario} step={step} readOnly={readOnly} onScenario={onScenario} onStep={goToStep} guided={guidedPlayback}/>}
+          {modal!=='presentation'&&<Playback document={document} scenario={scenario} step={step} readOnly={!editable} onScenario={onScenario} onStep={goToStep} guided={guidedPlayback}/>}
           <div className="panel-note"><Icon name="branch" size={16}/><p>Each scenario follows a different path through the same diagram.</p></div>
         </div>
-        {!readOnly && <>
+        {editable && <>
           <div id="panel-editor" role="tabpanel" aria-labelledby="tab-editor" hidden={panel!=='editor'}><Editor document={document} scenario={scenario} selected={selected} onSelect={setSelected} onChange={edit} onScenario={onScenario} confirm={confirm} onInspect={(index,target)=>{onScenario(index);setStep(target);setPanel('playback');}}/></div>
           <div id="panel-project" role="tabpanel" aria-labelledby="tab-project" hidden={panel!=='project'}>
-            <section className="project-overview"><p className="section-overline">PROJECT DETAILS</p><h2>{document.title||'Untitled Diagram'}</h2><p className="hint">{active?'Private draft in your account.':'A local draft in this browser.'}</p><dl className="project-facts"><div><dt>Nodes</dt><dd>{document.nodes.length}</dd></div><div><dt>Scenarios</dt><dd>{document.scenarios.length}</dd></div><div><dt>Online Version</dt><dd>{accountsEnabled?(active?.version||'Not Saved'):'Unavailable in Demo'}</dd></div></dl><button id="version-history" className="full-width" disabled={!active||busy} onClick={loadRevisions}><Icon name="history" size={16}/>Version History</button><p className="hint">{!accountsEnabled?'Online saves and version history are available in the full application, not this guest demo.':active?'Preview and restore any saved version.':'Save online to start tracking versions.'}</p></section>
+            <section className="project-overview"><p className="section-overline">PROJECT DETAILS</p><h2>{document.title||'Untitled Diagram'}</h2><p className="hint">{active?(active.role==='EDITOR'?'Shared project · Editor access.':'Private draft in your account.'):'A local draft in this browser.'}</p><dl className="project-facts"><div><dt>Nodes</dt><dd>{document.nodes.length}</dd></div><div><dt>Scenarios</dt><dd>{document.scenarios.length}</dd></div><div><dt>Online Version</dt><dd>{accountsEnabled?(active?.version||'Not Saved'):'Unavailable in Demo'}</dd></div></dl><button id="version-history" className="full-width" disabled={!active||busy} onClick={loadRevisions}><Icon name="history" size={16}/>Version History</button><p className="hint">{!accountsEnabled?'Online saves and version history are available in the full application, not this guest demo.':active?'Preview and restore any saved version.':'Save online to start tracking versions.'}</p></section>
             <section className="project-operations"><div className="section-heading"><Icon name="history" size={17}/><h2>Activity & Reference</h2></div><p className="hint">Review saved project actions and explore the Java API.</p><div className="actions"><button id="project-activity" disabled={!active||busy} onClick={() => loadActivity(0,active?.id)}>Project Activity</button><a className="button-link" href="/api/docs" target="_blank" rel="noreferrer">API Reference<Icon name="external" size={14}/></a></div></section>
             <section id="examples"><div className="section-heading"><Icon name="arrange" size={17}/><h2>Example Projects</h2></div><p className="hint">Explore an existing system, then make it your own.</p><label htmlFor="demo">Choose an Example</label><div className="sample-picker"><select id="demo" value={demo} onChange={e => setDemo(e.target.value)}>{Object.entries(examples).map(([key,value]) => <option value={key} key={key}>{value.title}</option>)}</select><button id="load-demo" disabled={busy} onClick={() => confirm('Open Example',accountsEnabled?'Replace this local workspace? Save online or export your current work first.':'Replace this browser-local workspace? Export JSON to keep a backup first.',() => {replaceLocalDocument(structuredClone(examples[demo]));setPanel('playback');})}>Open</button></div></section>
             <section id="project-files"><div className="section-heading"><Icon name="file" size={17}/><h2>Import & Export</h2></div><p className="hint">Back up your diagram or move it between browsers. Version-1 prototype files are supported.</p><div className="file-actions"><button id="export-project" onClick={exportFile}><Icon name="download" size={16}/><span>Export Project<span className="button-description">Download a JSON backup</span></span></button><button id="import-project" disabled={busy} onClick={() => fileRef.current?.click()}><Icon name="upload" size={16}/><span>Import Project<span className="button-description">Open an existing JSON file</span></span></button><button onClick={() => {const url=new URL('/',location.origin);url.hash=encodeURIComponent(JSON.stringify(publishedDocument(document)));setShareUrl(url.href);setPublications([]);setModal('share');}}><Icon name="copy" size={16}/><span>Local Snapshot Link<span className="button-description">Share without saving online</span></span></button></div>
@@ -447,9 +465,10 @@ export default function App() {
         </>}
       </>}
     >
-      {modal!=='presentation'&&<Canvas onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={readOnly} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
+      {modal!=='presentation'&&<Canvas onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={!editable} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
     </WorkspaceShell>
 
+    {collaboration&&user&&accountsEnabled&&<Collaboration project={collaboration.project} onClose={()=>setCollaboration(null)} onOpen={id=>{if(cloudDirty&&!readOnly){setCollaboration(null);confirm('Open Shared Project','Replace this local workspace? Save or export your changes first.',()=>void openProject(id));}else void openProject(id);}}/>}
     {modal === 'confirm' && confirmDetails && <Dialog title={confirmDetails.title} onClose={() => setModal(null)}><p className="dialog-copy">{confirmDetails.message}</p><div className="actions"><button className="primary" onClick={() => { setModal(null); confirmDetails.action(); }}>Continue</button><button onClick={() => setModal(null)}>Cancel</button></div></Dialog>}
     {modal==='account'&&user&&<AccountSettings account={user} onClose={()=>setModal(null)} onProfile={setUser} onSignedOut={message=>{setUser(null);setActive(null);setAuthMode('login');setAuthError('');setAuthMessage(message);setAuthSuccess(null);setModal('auth');}} onSignOut={signOut}/>}
     {modal === 'auth' && <Dialog title={authSuccess?'You’re Signed In':authViews[authMode].title} onClose={() => {if(!busy)setModal(null);}}>
@@ -475,9 +494,9 @@ export default function App() {
         <button className="text-button" disabled={busy} onClick={() => {setAuthMode(authMode==='login'?'register':'login');setAuthError('');setAuthMessage('');}}>{authMode==='login'?'New here? Create an Account':'Back to Sign In'}</button>
       </>}
     </Dialog>}
-    {modal === 'projects' && <Dialog title="My Projects" onClose={() => {if(!busy)setModal(null);}}><p className="dialog-copy">Your private drafts. Publishing creates a separate public snapshot.</p>{projectListLoading && <p role="status">Loading Projects…</p>}{projectListError && <p className="form-error" role="alert">{projectListError}</p>}{!projectListLoading&&!projectListError&&!projects.length&&<p className="hint">{appliedProjectQuery?"No projects match your search.":"No projects yet. Close this window and choose Save Online."}</p>}
+    {modal === 'projects' && <Dialog title="My Projects" onClose={() => {if(!busy)setModal(null);}}><p className="dialog-copy">Owned projects and accepted shared projects. Publishing creates a separate public snapshot.</p><button onClick={()=>{setModal(null);setCollaboration({project:null});}}>Invitations &amp; Sharing</button>{projectListLoading && <p role="status">Loading Projects…</p>}{projectListError && <p className="form-error" role="alert">{projectListError}</p>}{!projectListLoading&&!projectListError&&!projects.length&&<p className="hint">{appliedProjectQuery?"No projects match your search.":"No projects yet. Close this window and choose Save Online."}</p>}
       <form className="project-search" onSubmit={e => {e.preventDefault();void loadProjectPage(0,projectQuery);}}><label htmlFor="project-search">Search Your Projects</label><div className="sample-picker"><input id="project-search" type="search" maxLength={80} value={projectQuery} onChange={e => setProjectQuery(e.target.value)} placeholder="Search by title"/><button disabled={projectListLoading} type="submit">Search</button></div></form>
-      <ul className="project-list">{projects.map(project => <li key={project.id}><div><strong>{project.title}</strong><p>Version {project.version} · {new Date(project.updatedAt).toLocaleDateString()}</p></div><div className="actions"><button disabled={busy} onClick={() => {if(!readOnly&&cloudDirty)confirm('Open Project','Replace this local workspace? Save or export unsynced changes first.',() => {void openProject(project.id);});else void openProject(project.id);}}>Open</button><button className="danger" disabled={busy} aria-label={'Delete '+project.title} onClick={() => confirm('Delete Project',`Delete “${project.title}” and revoke all its published links? This cannot be undone.`,async () => {setBusy(true);try{await request(`/projects/${project.id}?version=${project.version}`,'DELETE');if(active?.id===project.id)setActive(null);setNotice('Project deleted. Its published links have been revoked.');}catch(error){setNotice(errorMessage(error));}finally{setBusy(false);}})}>Delete</button></div></li>)}</ul>
+      <ul className="project-list">{projects.map(project => <li key={project.id}><div><strong>{project.title}</strong><p>{project.role??'OWNER'} · Version {project.version} · {new Date(project.updatedAt).toLocaleDateString()}</p></div><div className="actions"><button disabled={busy} onClick={() => {if(!readOnly&&cloudDirty)confirm('Open Project','Replace this local workspace? Save or export unsynced changes first.',() => {void openProject(project.id);});else void openProject(project.id);}}>Open</button>{(!project.role||project.role==='OWNER')&&<button disabled={busy} aria-label={'Manage Access '+project.title} onClick={()=>{setModal(null);setCollaboration({project:{id:project.id,title:project.title,role:project.role??'OWNER'}});}}>Manage Access</button>}<button className="danger" disabled={busy||(!!project.role&&project.role!=='OWNER')} aria-label={'Delete '+project.title} onClick={() => confirm('Delete Project',`Delete “${project.title}” and revoke all its published links? This cannot be undone.`,async () => {setBusy(true);try{await request(`/projects/${project.id}?version=${project.version}`,'DELETE');if(active?.id===project.id)setActive(null);setNotice('Project deleted. Its published links have been revoked.');}catch(error){setNotice(errorMessage(error));}finally{setBusy(false);}})}>Delete</button></div></li>)}</ul>
       {projectPage&&projectPage.totalPages>0&&<div className="page-controls"><button disabled={projectListLoading||projectPage.page===0} onClick={() => loadProjectPage(projectPage.page-1,appliedProjectQuery)}>Previous</button><span>Page {projectPage.page+1} of {projectPage.totalPages} &middot; {projectPage.total} projects</span><button disabled={projectListLoading||projectPage.page+1>=projectPage.totalPages} onClick={() => loadProjectPage(projectPage.page+1,appliedProjectQuery)}>Next</button></div>}
       <button className="text-button" onClick={() => loadActivity(0)}>View Account Activity</button>
       <button disabled={busy} onClick={() => confirm('New Project','Start a blank local workspace? Save or export your current work first.',() => { if(readOnly){location.assign('/');return;} openDocument({title:'Untitled Diagram',nodes:[],scenarios:[{name:'Main Scenario',steps:[]}]});})}>+ New Project</button>
@@ -496,7 +515,7 @@ export default function App() {
       {busy&&<p role="status">Loading saved version…</p>}
       {revisionError && <p className="form-error" role="alert">{revisionError}</p>}
       {!revisionLoading&&!revisionError&&!revisions.length && <p className="hint">No saved versions yet.</p>}
-      <ol className="revision-list">{revisions.map(revision => <li key={revision.version}><span className="revision-marker"><Icon name="history" size={15}/></span><div className="revision-information"><strong>Version {revision.version}{revision.version===active?.version&&<span className="current-version">Current</span>}</strong><p>{revision.title}</p><time dateTime={revision.createdAt}>{new Date(revision.createdAt).toLocaleString()}</time></div><div className="revision-actions"><button disabled={busy} aria-label={'Preview Version '+revision.version} onClick={() => void previewRevision(revision.version)}>Preview</button><button disabled={busy||revision.version===active?.version} aria-label={'Restore Version '+revision.version} onClick={() => confirm('Restore Version '+revision.version,`Restore this version as a new saved version? ${cloudDirty?'Unsaved local edits will be replaced. Export them first if you want to keep them.':'Your current saved version will remain in history.'}`,() => {void restoreRevision(revision.version);})}>Restore</button></div></li>)}</ol>
+      <ol className="revision-list">{revisions.map(revision => <li key={revision.version}><span className="revision-marker"><Icon name="history" size={15}/></span><div className="revision-information"><strong>Version {revision.version}{revision.version===active?.version&&<span className="current-version">Current</span>}</strong><p>{revision.title}</p><time dateTime={revision.createdAt}>{new Date(revision.createdAt).toLocaleString()}</time></div><div className="revision-actions"><button disabled={busy} aria-label={'Preview Version '+revision.version} onClick={() => void previewRevision(revision.version)}>Preview</button><button disabled={busy||projectViewer||revision.version===active?.version} aria-label={'Restore Version '+revision.version} onClick={() => confirm('Restore Version '+revision.version,`Restore this version as a new saved version? ${cloudDirty?'Unsaved local edits will be replaced. Export them first if you want to keep them.':'Your current saved version will remain in history.'}`,() => {void restoreRevision(revision.version);})}>Restore</button></div></li>)}</ol>
       {revisionPreview && <><section className="revision-preview"><p className="section-overline">VERSION {revisionPreview.version} PREVIEW</p><h3>{revisionPreview.title}</h3><p>{revisionPreview.document.nodes.length} nodes · {revisionPreview.document.scenarios.length} scenarios</p><ul>{revisionPreview.document.scenarios.map((s,i) => <li key={i}>{s.name}<span>{s.steps.length} steps</span></li>)}</ul></section><RevisionComparison before={revisionPreview.document} after={document} version={revisionPreview.version} currentVersion={active!.version} unsaved={cloudDirty}/></>}
       <p className="hint">The latest 100 saved versions are listed. For projects created before version history was added, tracking starts from the migration baseline.</p>
     </Dialog>}

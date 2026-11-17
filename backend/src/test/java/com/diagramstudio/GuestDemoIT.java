@@ -31,6 +31,7 @@ class GuestDemoIT {
             int status=http.send(request,HttpResponse.BodyHandlers.ofString()).statusCode();assertTrue(status==401||status==403,path+" must be unavailable");
         }
         assertEquals(401,http.send(HttpRequest.newBuilder(URI.create(base+"/api/projects")).GET().build(),HttpResponse.BodyHandlers.ofString()).statusCode());
+        assertEquals(401,http.send(HttpRequest.newBuilder(URI.create(base+"/api/invitations")).GET().build(),HttpResponse.BodyHandlers.ofString()).statusCode());
         assertEquals(users,jdbc.queryForObject("SELECT count(*) FROM app_users",Long.class));
     }
 }

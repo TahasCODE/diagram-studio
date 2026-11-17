@@ -2,8 +2,9 @@ import { parseDiagram } from './model';
 import type { Diagram } from './model';
 
 export interface Account { id: string; name: string; email: string }
-export interface Draft { id: string; version: number; updatedAt: string; document: Diagram }
-export interface ProjectSummary { id: string; title: string; version: number; updatedAt: string }
+export type ProjectRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+export interface Draft { id: string; version: number; updatedAt: string; document: Diagram; role?: ProjectRole }
+export interface ProjectSummary { id: string; title: string; version: number; updatedAt: string; role?: ProjectRole }
 export interface PublicationSummary { id: string; title: string; createdAt: string }
 export interface Publication extends PublicationSummary { document: Diagram }
 export interface RevisionSummary { version: number; title: string; createdAt: string }

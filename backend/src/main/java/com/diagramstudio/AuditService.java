@@ -14,7 +14,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 public class AuditService {
-    public enum Action { PROJECT_CREATED, PROJECT_UPDATED, PROJECT_PUBLISHED, PROJECT_RESTORED, PROJECT_REMIXED, PROJECT_DELETED }
+    public enum Action { PROJECT_CREATED, PROJECT_UPDATED, PROJECT_PUBLISHED, PROJECT_RESTORED, PROJECT_REMIXED, PROJECT_DELETED, MEMBER_INVITED, MEMBER_ROLE_CHANGED, MEMBER_REMOVED, INVITATION_ACCEPTED, INVITATION_DECLINED }
     public record Event(long id, UUID projectId, String action, Long version, String requestId, Instant createdAt) {}
     private final JdbcTemplate jdbc;
     private final MeterRegistry meters;
