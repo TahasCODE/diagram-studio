@@ -1,8 +1,8 @@
 # Shared project access (full application)
 
 The full account-enabled application supports asynchronous project collaboration.
-The deployed guest demo and its video are unchanged; collaboration is unavailable
-when `ACCOUNTS_ENABLED=false`. This is shared access with explicit version-checked
+Collaboration is unavailable on the deployed guest demo when
+`ACCOUNTS_ENABLED=false`, and is not shown in the guest video. This is shared access with explicit version-checked
 saves, not live simultaneous editing, presence or automatic merging.
 
 ## Try it locally

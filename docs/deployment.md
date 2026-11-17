@@ -13,6 +13,14 @@ Private drafts, revisions, immutable publications and accounts are verified in t
 full-mode code/tests; do not imply these are enabled on the hosted guest demo.
 Gmail authorization and live email delivery are not part of this release.
 
+The product introduction lives at `/welcome`, while `/` stays the editor so
+existing CV and walkthrough links remain valid. The website includes the recorded
+demo, About and footer; the editor links back through Help & About. Public Sign In
+links explain the guest-only scope. In full mode they enter `/?signin=1` and open
+the existing account form. Studio entry uses a themed skeleton while its module
+loads. Accounts, email, collaboration and node discussions remain disabled on the
+guest deployment. The release checker now includes both `/welcome` routes.
+
 On 2026-11-16, all 13 read-only release checks passed against the HTTPS origin.
 A fresh Chrome session verified secure HttpOnly SameSite=Lax session cookies,
 server rejection of account requests, snapshot playback/remixing, SVG/PNG

@@ -1,7 +1,7 @@
 # Node comments and review discussions
 
 Node Comments is part of the full account-enabled application only. The hosted
-guest app and video remain unchanged. This feature uses explicit refresh, not
+guest app disables comments, and the existing video shows guest playback. This feature uses explicit refresh, not
 real-time notifications or collaborative cursors.
 
 ## Try locally

@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
 import { createRoot } from 'react-dom/client';
 import {lazy,Suspense} from 'react';
+import {RouteLoading} from './components/RouteLoading';
 import '../style.css';
 
 class ErrorBoundary extends Component<{children: ReactNode}, {failed: boolean}> {
@@ -13,4 +14,4 @@ class ErrorBoundary extends Component<{children: ReactNode}, {failed: boolean}> 
 const website=/^\/welcome\/?$/.test(location.pathname);
 if(website)document.documentElement.dataset.surface='website';
 const Page=website?lazy(()=>import('./components/LandingPage')):lazy(()=>import('./App'));
-createRoot(document.getElementById('root')!).render(<ErrorBoundary><Suspense fallback={<div className="page-state" role="status">Loading Diagram Studio…</div>}><Page/></Suspense></ErrorBoundary>);
+createRoot(document.getElementById('root')!).render(<ErrorBoundary><Suspense fallback={<RouteLoading website={website}/>}><Page/></Suspense></ErrorBoundary>);

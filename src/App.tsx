@@ -212,6 +212,11 @@ export default function App() {
     dispatch({type:'edit',document:next}); setActive(null); setScenario(0); setStep(0); setSelected(next.nodes[0]?.id); setCloudError(''); setNotice('Local workspace replaced. Use Undo to restore the previous diagram.');
   };
   const openAuth = () => { if(!accountsEnabled){setNotice('Accounts are unavailable in this guest demo. Export JSON to back up your local work.');return;} setAuthError(''); setAuthMessage(''); setAuthSuccess(null); setAuthMode('login'); setModal('auth'); };
+  useEffect(()=>{
+    if(!sessionReady||readOnly||!new URLSearchParams(location.search).has('signin'))return;
+    if(accountsEnabled&&!user)openAuth();
+    const url=new URL(location.href);url.searchParams.delete('signin');window.history.replaceState(window.history.state,'',url);
+  },[sessionReady,accountsEnabled,user,readOnly]);
   const signOut=()=>confirm('Sign Out','Sign out of this browser? Your local diagram will remain on this device.',async()=>{
     setBusy(true);
     try{await request('/auth/logout','POST');await session();setUser(null);setActive(null);setCloudError('');setSaveConflict(null);setRecovery(null);setNotice('Signed out. Your local diagram remains on this device.');}
