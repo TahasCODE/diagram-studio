@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Diagram } from '../lib/model';
 import { CANVAS_UI as UI, placeConnectionLabel, routeConnection } from '../lib/diagramGeometry';
@@ -10,6 +10,7 @@ interface Props {
   onSelect:(id:string)=>void; onChange:(document:Diagram)=>void;
   onUndo:()=>void; onRedo:()=>void; canUndo:boolean; canRedo:boolean;
   onPresent?:()=>void; presentation?:boolean;
+  onDiscuss?:(nodeId:string)=>void;
 }
 export function Canvas(props:Props){
   const [exportOpen,setExportOpen]=useState(false);
@@ -86,7 +87,7 @@ export function Canvas(props:Props){
           const current=path[props.step]===node.id,selected=!props.readOnly&&props.selected===node.id;
           const outgoing=graph.outgoing.get(node.id)?.size||0;
           const type=outgoing>1?'decision':!graph.incoming.has(node.id)&&outgoing?'start':!outgoing&&graph.incoming.has(node.id)?'end':'process';
-          return <button key={node.id} type="button" aria-label={node.label} title={node.label+' · '+type+' node'} className={'node'+(current?' active':'')+(selected?' selected':'')+(position?.id===node.id?' is-dragging':'')} style={{left:node.x+'%',top:node.y+'%'}} disabled={props.readOnly} aria-pressed={!props.readOnly?selected:undefined}
+          return <Fragment key={node.id}><button type="button" aria-label={node.label} title={node.label+' · '+type+' node'} className={'node'+(current?' active':'')+(selected?' selected':'')+(position?.id===node.id?' is-dragging':'')} style={{left:node.x+'%',top:node.y+'%'}} disabled={props.readOnly} aria-pressed={!props.readOnly?selected:undefined}
             onClick={()=>{if(!drag.current?.moved)props.onSelect(node.id);}}
             onPointerDown={event=>{if(event.button!==0||props.readOnly)return;event.stopPropagation();event.currentTarget.setPointerCapture(event.pointerId);drag.current={id:node.id,startX:event.clientX,startY:event.clientY,x:node.x,y:node.y,moved:false};}}
             onPointerMove={event=>{const start=drag.current;if(!start||start.id!==node.id||!event.currentTarget.hasPointerCapture(event.pointerId))return;const dx=(event.clientX-start.startX)/zoom,dy=(event.clientY-start.startY)/zoom;if(!start.moved&&Math.hypot(dx,dy)<UI.dragThreshold)return;start.moved=true;const marginX=nodeWidth/2/size.width*100,marginY=nodeHeight/2/size.height*100;setPosition({id:node.id,x:Math.max(marginX,Math.min(100-marginX,start.x+dx*100/size.width)),y:Math.max(marginY,Math.min(100-marginY,start.y+dy*100/size.height))});}}
@@ -94,7 +95,7 @@ export function Canvas(props:Props){
             onPointerCancel={()=>{drag.current=null;setPosition(null);}}>
             <span className={'node-type '+type} aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">{type==='decision'?<path d="m8 2 6 6-6 6-6-6Z"/>:type==='start'?<path d="m6 4 6 4-6 4Z"/>:type==='end'?<><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></>:<rect x="3" y="3" width="10" height="10" rx="2"/>}</svg></span>
             <span className="node-label">{node.label}</span>{current&&<i className="current-dot" aria-hidden="true"/>}{selected&&Array.from({length:4},(_,i)=><i key={i} className="selection-handle" aria-hidden="true"/>)}
-          </button>;
+          </button>{props.onDiscuss&&!props.presentation&&<button className="comment-pin" aria-label={'Comments for '+node.label} title={'Discuss '+node.label} style={{left:node.x+'%',top:node.y+'%'}} onClick={event=>{event.stopPropagation();props.onDiscuss?.(node.id);}}><Icon name="comment" size={16}/></button>}</Fragment>;
         })}</div>
       </div>
     </div>

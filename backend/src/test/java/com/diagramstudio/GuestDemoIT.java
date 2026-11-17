@@ -32,6 +32,7 @@ class GuestDemoIT {
         }
         assertEquals(401,http.send(HttpRequest.newBuilder(URI.create(base+"/api/projects")).GET().build(),HttpResponse.BodyHandlers.ofString()).statusCode());
         assertEquals(401,http.send(HttpRequest.newBuilder(URI.create(base+"/api/invitations")).GET().build(),HttpResponse.BodyHandlers.ofString()).statusCode());
+        assertEquals(401,http.send(HttpRequest.newBuilder(URI.create(base+"/api/projects/00000000-0000-0000-0000-000000000000/comments")).GET().build(),HttpResponse.BodyHandlers.ofString()).statusCode());
         assertEquals(users,jdbc.queryForObject("SELECT count(*) FROM app_users",Long.class));
     }
 }

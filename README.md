@@ -52,6 +52,10 @@ The full local application also supports [shared projects and member invitations
 with Owner, Editor and Viewer permissions. The public guest deployment remains
 unchanged and does not enable collaboration or account access.
 
+Members can also [review saved nodes with comments and replies](docs/node-comments.md),
+including Viewer participation and resolve/reopen controls. Discussions stay
+private to the full application and never modify published snapshots or exports.
+
 For the verified publication, revision and concurrent-save design, see
 [the engineering story](docs/engineering-story.md), including an interview-ready
 decision and steps to reproduce the two-tab recovery flow.

@@ -51,6 +51,51 @@ class CollaborationIT {
         }
     }
     Map<String,Object> document(String title){return Map.of("title",title,"nodes",List.of(Map.of("id","a","label","API","x",20,"y",30)),"scenarios",List.of(Map.of("name","Read","steps",List.of("a"))));}
+    @Test void nodeDiscussionsRespectMembershipResolutionAndSnapshotBoundaries()throws Exception{
+        var owner=new Client();var viewer=new Client();var outsider=new Client();
+        var draft=owner.call("/projects","POST",Map.of("document",document("Review flow")),201);
+        String project="/projects/"+draft.get("id"),comments=project+"/comments";
+        owner.call(project+"/members","POST",Map.of("email",viewer.email,"role","VIEWER"),204);
+        viewer.call(comments,"GET",null,404);
+        viewer.call(comments,"POST",Map.of("nodeId","a","body","Pending"),404);
+        viewer.call("/invitations/"+draft.get("id")+"/accept","POST",null,204);
+        owner.call(comments,"POST",Map.of("nodeId","a","body","   "),400);
+        owner.call(comments,"POST",Map.of("nodeId","a","body","x".repeat(1001)),400);
+        owner.call(comments,"POST",Map.of("nodeId","unsaved","body","Where is this node?"),400);
+        var thread=viewer.call(comments,"POST",Map.of("nodeId","a","body","<script>alert('text only')</script>"),201);
+        String path=comments+"/"+thread.get("id");
+        assertEquals(viewer.id.toString(),thread.get("authorId"));assertEquals("API",thread.get("nodeLabel"));
+        owner.call(path+"/replies","POST",Map.of("body","Add a retry limit here."),201);
+        viewer.call(path+"/replies","POST",Map.of("body","Agreed."),201);
+        assertEquals(2,((Number)viewer.call(path+"/replies?size=1","GET",null,200).get("totalPages")).intValue());
+        assertEquals(0,((Number)viewer.call(comments+"?nodeId=another","GET",null,200).get("total")).intValue());
+        viewer.call(comments+"?size=51","GET",null,400);
+        assertEquals(1,((Number)owner.call(project,"GET",null,200).get("version")).intValue());
+        var publication=owner.call(project+"/publications","POST",Map.of("version",1),201);
+        var publishedDocument=owner.call("/publications/"+publication.get("id"),"GET",null,200).get("document");
+        viewer.call(path,"PATCH",Map.of("version",1,"resolved",true),200);
+        viewer.call(path+"/replies","POST",Map.of("body","Reply after resolve"),409);
+        owner.call(path,"PATCH",Map.of("version",1,"resolved",false),409);
+        owner.call(path,"PATCH",Map.of("version",2,"resolved",false),200);
+        var ownerThread=owner.call(comments,"POST",Map.of("nodeId","a","body","Review database capacity."),201);
+        viewer.call(comments+"/"+ownerThread.get("id"),"PATCH",Map.of("version",1,"resolved",true),403);
+        owner.call(project+"/members/"+viewer.id,"PATCH",Map.of("role","EDITOR"),204);
+        viewer.call(comments+"/"+ownerThread.get("id"),"PATCH",Map.of("version",1,"resolved",true),200);
+        // Another project owned by the same reader cannot be used to fetch this thread.
+        var other=owner.call("/projects","POST",Map.of("document",document("Other")),201);
+        owner.call("/projects/"+other.get("id")+"/comments/"+thread.get("id"),"GET",null,404);
+        outsider.call(comments,"GET",null,404);outsider.call(path+"/replies","POST",Map.of("body","No access"),404);
+        var withoutNode=Map.of("title","Review flow","nodes",List.of(),"scenarios",List.of(Map.of("name","Read","steps",List.of())));
+        owner.call(project,"PUT",Map.of("version",1,"document",withoutNode),200);
+        assertEquals("API",owner.call(path,"GET",null,200).get("nodeLabel"));
+        owner.call(comments,"POST",Map.of("nodeId","a","body","Removed node"),400);
+        assertEquals(publishedDocument,owner.call("/publications/"+publication.get("id"),"GET",null,200).get("document"));
+        owner.call(project+"/members/"+viewer.id,"DELETE",null,204);
+        viewer.call(path,"GET",null,404);viewer.call(path+"/replies","POST",Map.of("body","Revoked"),404);
+        owner.call(project+"?version=2","DELETE",null,204);
+        assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM node_discussions WHERE project_id=?",Integer.class,UUID.fromString((String)draft.get("id"))));
+        assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM discussion_replies WHERE discussion_id=?",Integer.class,UUID.fromString((String)thread.get("id"))));
+    }
     @Test void invitationsPermissionsConflictsAndRevocation()throws Exception{
         var owner=new Client();var editor=new Client();var viewer=new Client();var outsider=new Client();
         var draft=owner.call("/projects","POST",Map.of("document",document("Shared read flow")),201);
