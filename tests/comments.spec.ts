@@ -41,6 +41,7 @@ test('members discuss a node, retain reply text across conflicts, and respect re
     await viewer.getByRole('button',{name:'Refresh Comments',exact:true}).click();
     await expect(viewer.getByLabel('Your Reply',{exact:true})).toHaveCount(0);
     await page.getByRole('button',{name:'Reopen Discussion',exact:true}).click();
+    await expect(page.getByText('Discussion reopened.',{exact:true})).toBeVisible();
     await viewer.getByRole('button',{name:'Refresh Comments',exact:true}).click();
     await expect(viewer.getByLabel('Your Reply',{exact:true})).toHaveValue('Keep my unsent review text');
     for(const width of [1440,1024,390]){
