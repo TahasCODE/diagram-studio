@@ -1,4 +1,4 @@
-export type IconName = 'diagram' | 'play' | 'edit' | 'folder' | 'file' | 'sun' | 'moon' | 'save' | 'share' | 'undo' | 'redo' | 'left' | 'right' | 'restart' | 'plus' | 'trash' | 'copy' | 'upload' | 'download' | 'arrange' | 'branch' | 'check' | 'close' | 'logout' | 'user' | 'external' | 'history' | 'chevron' | 'minus' | 'fit' | 'sliders' | 'info';
+export type IconName = 'comment' | 'diagram' | 'play' | 'edit' | 'folder' | 'file' | 'sun' | 'moon' | 'save' | 'share' | 'undo' | 'redo' | 'left' | 'right' | 'restart' | 'plus' | 'trash' | 'copy' | 'upload' | 'download' | 'arrange' | 'branch' | 'check' | 'close' | 'logout' | 'user' | 'external' | 'history' | 'chevron' | 'minus' | 'fit' | 'sliders' | 'info';
 import type { ReactNode } from 'react';
 const paths: Record<IconName, ReactNode> = {
   info:<><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></>,
@@ -6,6 +6,7 @@ const paths: Record<IconName, ReactNode> = {
   fit:<><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></>,
   sliders:<><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="var(--surface)"/><circle cx="15" cy="12" r="2" fill="var(--surface)"/><circle cx="9" cy="18" r="2" fill="var(--surface)"/></>,
   diagram: <><rect x="3" y="3" width="6" height="6" rx="1.4"/><rect x="15" y="15" width="6" height="6" rx="1.4"/><path d="M6 9v9h9M9 6h9v9"/></>,
+  comment: <path d="M4 4h16v12H9l-5 4V4Z"/>,
   play: <path d="m9 5 11 7-11 7V5Z"/>,
   edit: <><path d="m15 5 4 4M4 20l5-1L21 7a2.8 2.8 0 0 0-4-4L5 15l-1 5Z"/></>,
   folder: <path d="M3 7V5h6l3 3h9v11H3V7Z"/>,

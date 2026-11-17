@@ -19,11 +19,14 @@ public class ProjectAccess {
     // All draft and membership mutations take the same project lock. A revoked or
     // downgraded member cannot race a save past the permission check.
     public Role lock(UUID actor,UUID project,boolean ownerOnly) {
-        var ids=jdbc.query("SELECT id FROM projects WHERE id=? FOR UPDATE",(rs,row)->rs.getObject(1,UUID.class),project);
-        if(ids.isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND,"This project was not found.");
-        Role role=role(actor,project);
+        Role role=lockMember(actor,project);
         if(ownerOnly?role!=Role.OWNER:role==Role.VIEWER)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,ownerOnly?"Only the project owner can perform this action.":"Viewer access does not allow changes. Ask the owner for Editor access.");
         return role;
+    }
+    public Role lockMember(UUID actor,UUID project) {
+        var ids=jdbc.query("SELECT id FROM projects WHERE id=? FOR UPDATE",(rs,row)->rs.getObject(1,UUID.class),project);
+        if(ids.isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND,"This project was not found.");
+        return role(actor,project);
     }
 }

@@ -84,6 +84,17 @@ GET `/invitations` lists the recipient's pending invitations. POST
 204, use the project ID, and require the invited account. Invitations send no email.
 See [permissions and concurrency](../docs/collaboration.md).
 
+Node review: GET/POST `/projects/{id}/comments` lists/starts discussions. POST
+accepts `{nodeId,body}`; `nodeId` must exist in the saved draft. GET supports
+optional `nodeId`, `page` and `size`. GET `/projects/{id}/comments/{threadId}`
+loads a thread; PATCH accepts `{version,resolved}`. The author, Owner or Editor
+can resolve/reopen, using the discussion's independent optimistic version.
+GET/POST `/projects/{id}/comments/{threadId}/replies` lists/posts replies, POST
+accepting `{body}`. Accepted Viewers may participate; resolved threads reject
+replies with 409. Bodies are trimmed plain text, 1-1000 characters. All writes
+require CSRF. Comments are separate from drafts, publications and exports.
+See [node comment behavior](../docs/node-comments.md).
+
 A document is `{title?,nodes,scenarios}`. Nodes have unique nonempty `id`, `label`,
 numeric `x`/`y` within 0–100, and optional `notes`. Scenarios have `name`, an ordered
 `steps` array of existing node IDs (repetitions allowed), optional `description`,

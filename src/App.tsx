@@ -10,6 +10,7 @@ import { RevisionComparison } from './components/RevisionComparison';
 import { ConflictRecovery } from './components/ConflictRecovery';
 import { AccountSettings } from './components/AccountSettings';
 import { Collaboration } from './components/Collaboration';
+import { NodeComments } from './components/NodeComments';
 import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
 import { Icon } from './components/Icon';
@@ -84,6 +85,7 @@ export default function App() {
   const [apiOnline, setApiOnline] = useState(true);
   const [active, setActive] = useState<CloudDraft | null>(null);
   const [collaboration,setCollaboration]=useState<{project:{id:string;title:string;role:ProjectRole}|null}|null>(null);
+  const [comments,setComments]=useState<{nodeId?:string}|null>(null);
   const projectViewer=active?.role==='VIEWER';
   const [localSaved, setLocalSaved] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -450,6 +452,7 @@ export default function App() {
         <div id="panel-playback" role="tabpanel" aria-labelledby="tab-playback" hidden={panel!=='playback'}>
           {!walkthroughMode&&<a className="walkthrough-entry" href="/?walkthrough=cache-outage"><span className="section-overline">FEATURED WALKTHROUGH</span><strong>What happens when the cache goes down?</strong><span>Make the call at a Redis failure. Two outcomes. No account needed. <Icon name="right" size={14}/></span></a>}
           {modal!=='presentation'&&<Playback document={document} scenario={scenario} step={step} readOnly={!editable} onScenario={onScenario} onStep={goToStep} guided={guidedPlayback}/>}
+          {active&&user&&accountsEnabled&&!readOnly&&<section className="project-operations"><button id="node-comments" className="full-width" onClick={()=>setComments({})}><Icon name="comment" size={16}/>Node Comments</button><p className="hint">Discuss saved nodes with project members, including Viewers.</p></section>}
           <div className="panel-note"><Icon name="branch" size={16}/><p>Each scenario follows a different path through the same diagram.</p></div>
         </div>
         {editable && <>
@@ -465,9 +468,10 @@ export default function App() {
         </>}
       </>}
     >
-      {modal!=='presentation'&&<Canvas onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={!editable} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
+      {modal!=='presentation'&&<Canvas onDiscuss={active&&user&&accountsEnabled&&!readOnly?nodeId=>setComments({nodeId}):undefined} onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={!editable} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
     </WorkspaceShell>
 
+    {comments&&active&&user&&accountsEnabled&&!readOnly&&<NodeComments projectId={active.id} actorId={user.id} role={active.role??'OWNER'} nodes={document.nodes} initialNodeId={comments.nodeId} onClose={()=>setComments(null)}/>}
     {collaboration&&user&&accountsEnabled&&<Collaboration project={collaboration.project} onClose={()=>setCollaboration(null)} onOpen={id=>{if(cloudDirty&&!readOnly){setCollaboration(null);confirm('Open Shared Project','Replace this local workspace? Save or export your changes first.',()=>void openProject(id));}else void openProject(id);}}/>}
     {modal === 'confirm' && confirmDetails && <Dialog title={confirmDetails.title} onClose={() => setModal(null)}><p className="dialog-copy">{confirmDetails.message}</p><div className="actions"><button className="primary" onClick={() => { setModal(null); confirmDetails.action(); }}>Continue</button><button onClick={() => setModal(null)}>Cancel</button></div></Dialog>}
     {modal==='account'&&user&&<AccountSettings account={user} onClose={()=>setModal(null)} onProfile={setUser} onSignedOut={message=>{setUser(null);setActive(null);setAuthMode('login');setAuthError('');setAuthMessage(message);setAuthSuccess(null);setModal('auth');}} onSignOut={signOut}/>}
