@@ -107,6 +107,14 @@ traffic, multi-replica operation and production SMTP delivery are not establishe
 
 ## Three CV bullets, with evidence
 
+Additional collaboration line (full application only):
+
+- Implemented shared-project collaboration with in-app invitations and Owner,
+  Editor and Viewer permissions; verified access revocation and concurrent saves
+  using PostgreSQL integration and multi-user Playwright tests. Evidence:
+  `CollaborationIT.java`, `tests/collaboration.spec.ts` and
+  [the permission model](collaboration.md).
+
 - Built a React/TypeScript and Java Spring Boot diagram studio with PostgreSQL
   persistence, email-verified accounts, database-backed sessions and owner-scoped
   project access. Evidence: `AuthController.java`, `SecurityConfiguration.java`,

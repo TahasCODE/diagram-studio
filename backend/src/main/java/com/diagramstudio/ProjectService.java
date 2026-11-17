@@ -14,8 +14,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class ProjectService {
-    public record Summary(UUID id, String title, long version, Instant updatedAt) {}
-    public record Draft(UUID id, long version, Instant updatedAt, DiagramDocument document) {}
+    public record Summary(UUID id, String title, long version, Instant updatedAt, ProjectAccess.Role role) {}
+    public record Draft(UUID id, long version, Instant updatedAt, DiagramDocument document, ProjectAccess.Role role) {}
     public record PublicationSummary(UUID id, String title, Instant createdAt) {}
     public record Publication(UUID id, String title, Instant createdAt, DiagramDocument document) {}
     public record RevisionSummary(long version, String title, Instant createdAt) {}
@@ -23,21 +23,25 @@ public class ProjectService {
     private final JdbcTemplate jdbc;
     private final JsonMapper json;
     private final AuditService audit;
-    public ProjectService(JdbcTemplate jdbc, JsonMapper json,AuditService audit) { this.jdbc = jdbc; this.json = json; this.audit=audit; }
+    private final ProjectAccess access;
+    public ProjectService(JdbcTemplate jdbc, JsonMapper json,AuditService audit,ProjectAccess access) { this.jdbc = jdbc; this.json = json; this.audit=audit; this.access=access; }
 
     @Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public PageResult<Summary> list(UUID owner,int page,int size,String query) {
         PageResult.validate(page,size);
         if(query.length()>80) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Search text must be at most 80 characters.");
         String pattern="%"+query.trim().replace("!","!!").replace("%","!%").replace("_","!_")+"%";
-        long total=jdbc.queryForObject("SELECT count(*) FROM projects WHERE owner_id=? AND title ILIKE ? ESCAPE '!'",Long.class,owner,pattern);
-        var items=jdbc.query("SELECT id,title,version,updated_at FROM projects WHERE owner_id=? AND title ILIKE ? ESCAPE '!' ORDER BY updated_at DESC,id DESC LIMIT ? OFFSET ?",
-            (rs,row)->new Summary(rs.getObject("id",UUID.class),rs.getString("title"),rs.getLong("version"),rs.getTimestamp("updated_at").toInstant()),owner,pattern,size,(long)page*size);
+        String from=" FROM projects p LEFT JOIN project_members m ON m.project_id=p.id AND m.user_id=? AND m.accepted WHERE (p.owner_id=? OR m.user_id IS NOT NULL) AND p.title ILIKE ? ESCAPE '!'";
+        long total=jdbc.queryForObject("SELECT count(*)"+from,Long.class,owner,owner,pattern);
+        var items=jdbc.query("SELECT p.id,p.title,p.version,p.updated_at,CASE WHEN p.owner_id=? THEN 'OWNER' ELSE m.role END AS role"+from+" ORDER BY p.updated_at DESC,p.id DESC LIMIT ? OFFSET ?",
+            (rs,row)->new Summary(rs.getObject("id",UUID.class),rs.getString("title"),rs.getLong("version"),rs.getTimestamp("updated_at").toInstant(),ProjectAccess.Role.valueOf(rs.getString("role"))),owner,owner,owner,pattern,size,(long)page*size);
         return PageResult.of(items,page,size,total);
     }
     public Draft get(UUID owner, UUID id) {
-        return jdbc.query("SELECT id,version,updated_at,document FROM projects WHERE id=? AND owner_id=?", this::draft, id, owner)
+        ProjectAccess.Role role=access.role(owner,id);
+        Draft draft=jdbc.query("SELECT id,version,updated_at,document FROM projects WHERE id=?", this::draft, id)
             .stream().findFirst().orElseThrow(ProjectService::notFound);
+        return new Draft(draft.id(),draft.version(),draft.updatedAt(),draft.document(),role);
     }
     @Transactional
     public Draft create(UUID owner, DiagramDocument document) {
@@ -52,8 +56,9 @@ public class ProjectService {
     @Transactional
     public Draft update(UUID owner, UUID id, long version, DiagramDocument document) {
         document.validate();
-        int changed = jdbc.update("UPDATE projects SET title=?,document=CAST(? AS jsonb),version=version+1,updated_at=now() WHERE id=? AND owner_id=? AND version=?",
-            document.displayTitle(), json.writeValueAsString(document), id, owner, version);
+        access.lock(owner,id,false);
+        int changed = jdbc.update("UPDATE projects SET title=?,document=CAST(? AS jsonb),version=version+1,updated_at=now() WHERE id=? AND version=?",
+            document.displayTitle(), json.writeValueAsString(document), id, version);
         if (changed == 0) { get(owner, id); throw conflict(); }
         Draft saved = get(owner, id);
         recordRevision(saved);
@@ -77,6 +82,7 @@ public class ProjectService {
     }
     @Transactional
     public Draft restore(UUID owner, UUID id, long expectedVersion, long revisionVersion) {
+        access.lock(owner,id,false);
         DiagramDocument document = revision(owner, id, revisionVersion).document();
         // Restore is a normal optimistic save. Old revisions and published snapshots are never rewritten.
         Draft restored=update(owner, id, expectedVersion, document);
@@ -85,12 +91,14 @@ public class ProjectService {
     }
     @Transactional
     public void delete(UUID owner, UUID id, long version) {
+        access.lock(owner,id,true);
         int changed = jdbc.update("DELETE FROM projects WHERE id=? AND owner_id=? AND version=?", id, owner, version);
         if (changed == 0) { get(owner, id); throw conflict(); }
         audit.record(owner,id,AuditService.Action.PROJECT_DELETED,version);
     }
     @Transactional
     public PublicationSummary publish(UUID owner, UUID id, long version) {
+        access.lock(owner,id,true);
         // Lock the owned draft so the version check and snapshot copy are atomic with saves.
         Draft draft = jdbc.query("SELECT id,version,updated_at,document FROM projects WHERE id=? AND owner_id=? FOR UPDATE", this::draft, id, owner)
             .stream().findFirst().orElseThrow(ProjectService::notFound);
@@ -122,7 +130,7 @@ public class ProjectService {
         return remixed;
     }
     private Draft draft(ResultSet rs, int row) throws SQLException {
-        return new Draft(rs.getObject("id", UUID.class), rs.getLong("version"), rs.getTimestamp("updated_at").toInstant(), json.readValue(rs.getString("document"), DiagramDocument.class));
+        return new Draft(rs.getObject("id", UUID.class), rs.getLong("version"), rs.getTimestamp("updated_at").toInstant(), json.readValue(rs.getString("document"), DiagramDocument.class),ProjectAccess.Role.OWNER);
     }
     private static ResponseStatusException notFound() { return new ResponseStatusException(HttpStatus.NOT_FOUND, "This project or published diagram was not found."); }
     private static ResponseStatusException conflict() { return new ResponseStatusException(HttpStatus.CONFLICT, "This project changed in another session. Reload it or save your work as a separate copy."); }

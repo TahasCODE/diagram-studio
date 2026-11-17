@@ -6,7 +6,7 @@ const auth={cookieAuth:[]};
 const write={cookieAuth:[],csrfToken:[]};
 const idParameter={name:'id',in:'path',required:true,schema:{type:'string',format:'uuid'}};
 function operation(operationId,description,method,response,body,security=[],extra={}) {
-  return {operationId,description,security,...(body?{requestBody:{required:true,...json(body)}}:{}),responses:{[method==='post'&&['register','createProject','publishProject','remixPublication'].includes(operationId)?'201':method==='delete'||['logout','verifyEmail','changePassword','logoutAll','resetPassword'].includes(operationId)?'204':'200']:{description:'Successful response',...(response?json(response):{})},'400':error,'401':error,'403':error,...extra}};
+  return {operationId,description,security,...(body?{requestBody:{required:true,...json(body)}}:{}),responses:{[method==='post'&&['register','createProject','publishProject','remixPublication'].includes(operationId)?'201':method==='delete'||['logout','verifyEmail','changePassword','logoutAll','resetPassword','inviteMember','changeMemberRole','acceptInvitation'].includes(operationId)?'204':'200']:{description:'Successful response',...(response?json(response):{})},'400':error,'401':error,'403':error,...extra}};
 }
 const optionalText=max=>({type:['string','null'],maxLength:max});
 const schemas={
@@ -55,6 +55,25 @@ const paths={
  '/publications/{id}':{parameters:[idParameter],get:operation('getPublication','Public playback document. Does not expose the owner or current draft.','get',ref('Publication'),null,[],{'404':error})},
  '/publications/{id}/remix':{parameters:[idParameter],post:operation('remixPublication','Creates an independent private project owned by the signed-in reader.','post',ref('Draft'),null,[write],{'404':error})},
 };
+const projectRole={type:'string',enum:['OWNER','EDITOR','VIEWER']};
+schemas.Draft.properties.role=projectRole;schemas.Draft.required.push('role');
+schemas.ProjectSummary.properties.role=projectRole;
+const memberRole={type:'string',enum:['EDITOR','VIEWER']};
+schemas.Member=object({id:{type:'string',format:'uuid'},name:{type:'string'},email:{type:'string',format:'email'},role:projectRole,accepted:{type:'boolean'}});
+schemas.Invitation=object({projectId:{type:'string',format:'uuid'},title:{type:'string'},ownerName:{type:'string'},role:memberRole,invitedAt:{type:'string',format:'date-time'}});
+paths['/projects/{id}/members']={parameters:[idParameter],get:operation('listMembers','Owner only. Lists current members and pending invitations.','get',{type:'array',items:ref('Member')},null,[auth],{'404':error}),post:operation('inviteMember','Owner only. Creates an in-app invitation for an existing verified account. No email is sent. Access starts after acceptance.','post',null,object({email:{type:'string',format:'email',maxLength:254},role:memberRole}),[write],{'404':error,'409':error})};
+paths['/projects/{id}/members/{userId}']={parameters:[idParameter,{name:'userId',in:'path',required:true,schema:{type:'string',format:'uuid'}}],patch:operation('changeMemberRole','Owner only. Updates a pending or accepted member role; ownership cannot be changed.','patch',null,object({role:memberRole}),[write],{'404':error}),delete:operation('removeMember','Owner only. Revokes pending or accepted access. Cannot recall previously downloaded content.','delete',null,null,[write],{'404':error})};
+paths['/invitations']={get:operation('listInvitations','Lists the authenticated recipient’s latest 100 pending project invitations.','get',{type:'array',items:ref('Invitation')},null,[auth])};
+paths['/invitations/{id}/accept']={parameters:[idParameter],post:operation('acceptInvitation','Recipient only. Accepts an invitation; id is the project ID. Repeated or revoked invitations return 404.','post',null,null,[write],{'404':error})};
+paths['/invitations/{id}']={parameters:[idParameter],delete:operation('declineInvitation','Recipient only. Declines a pending invitation.','delete',null,null,[write],{'404':error})};
+paths['/projects'].get.description='Lists owned and accepted shared projects with role metadata, pagination and literal title search.';
+paths['/projects/{id}'].get.description='Loads an owned or accepted shared draft. Missing, pending and revoked access return 404.';
+paths['/projects/{id}'].put.description='Owner or Editor only. Saves against an expected version; a stale save returns 409. Permission changes and saves share a project row lock.';
+paths['/projects/{id}/restore'].post.description+=' Requires Owner or Editor access.';
+paths['/projects/{id}/publications'].post.description+=' Owner only.';
+paths['/projects/{id}/publications'].get.description='Lists the latest 50 publications for a project the reader owns or has accepted access to.';
+paths['/projects/{id}/revisions'].get.description='Lists the latest 100 revisions for an owned or accepted shared project.';
+paths['/projects/{id}/revisions/{version}'].get.description='Loads a revision for an owned or accepted shared project; outsiders return 404.';
 for(const item of Object.values(paths)) for(const [method,operation] of Object.entries(item)) {
  if(!['get','post','put','delete','patch'].includes(method))continue;
  for(const response of Object.values(operation.responses))response.headers={...(response.headers||{}),'X-Request-ID':{description:'Server-issued request correlation identifier',schema:{type:'string',format:'uuid'}}};

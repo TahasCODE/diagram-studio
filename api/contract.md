@@ -33,6 +33,7 @@ All endpoints are under `/api`. JSON bodies are limited to 1 MB. Errors use
 Authentication uses an HttpOnly, SameSite=Lax session cookie. GET `/auth/me`
 returns `{ user: { id, name, email } | null, csrfToken }`. Send that token in
 `X-CSRF-TOKEN` on every POST, PUT, or DELETE. Call `/auth/me` again after logout.
+PATCH membership changes also require the CSRF token.
 Credentials are never stored in browser storage. Production must enable secure
 cookies and use HTTPS on one origin for the frontend and API.
 
@@ -46,19 +47,21 @@ cookies and use HTTPS on one origin for the frontend and API.
   `{items,page,size,total,totalPages}`. Page starts at 0, size is 1–50, and optional
   title search is literal, case-insensitive text (maximum 80 characters).
 - POST `/projects`: `{document}` → 201 `{id,version,updatedAt,document}`.
-- GET `/projects/{id}`: authenticated owner's full draft, same shape.
+- GET `/projects/{id}`: owned or accepted shared draft, with `role` metadata.
 - PUT `/projects/{id}`: `{version,document}` → updated draft and incremented
   version. 409 means someone else saved first; fetch or save a separate copy.
+  Requires Owner or Editor access; Viewers receive 403.
 - DELETE `/projects/{id}?version=n`: authenticated owner, matching version → 204.
   Published snapshots belonging to that project are also revoked.
 - POST `/projects/{id}/publications`: `{version}` → 201 `{id,createdAt,title}`.
   Must match the stored draft version. Each call creates a new immutable snapshot.
-- GET `/projects/{id}/publications`: owner's latest 50 publication summaries.
-- GET `/projects/{id}/revisions`: owner's latest 100 saved revision summaries
+- GET `/projects/{id}/publications`: latest 50 summaries for an accessible project.
+- GET `/projects/{id}/revisions`: latest 100 saved revisions for an accessible project
   `{version,title,createdAt}` in descending version order.
-- GET `/projects/{id}/revisions/{version}`: owner's saved revision, including
-  `document`. Other owners and missing versions return 404.
+- GET `/projects/{id}/revisions/{version}`: accessible saved revision, including
+  `document`. Unrelated accounts and missing versions return 404.
 - POST `/projects/{id}/restore`: `{version,revisionVersion}` → 200 draft.
+  Requires Owner or Editor access.
   `version` must match the current draft; `revisionVersion` identifies the saved
   content to restore. Appends a new revision and never rewrites older revisions
   or published snapshots. Stale current versions return 409.
@@ -66,9 +69,20 @@ cookies and use HTTPS on one origin for the frontend and API.
   ownership or draft data. Review flags are removed when publishing.
 - POST `/publications/{id}/remix`: signed-in reader → 201 independent owned draft.
 
-Private resources return 404 for both nonexistent and non-owned IDs. Unauthenticated
+Private resources return 404 for nonexistent, unrelated, pending and revoked access. Unauthenticated
 access to private endpoints returns 401; absent/invalid CSRF tokens return 403.
 Invalid diagrams return 400; duplicate email returns 409.
+
+Collaboration is full-application only. GET `/projects` includes accepted shared
+projects with `OWNER`, `EDITOR` or `VIEWER` role metadata. Only Owners may publish,
+delete or manage access. POST `/projects/{id}/members` accepts `{email,role}` and
+returns 204 after inviting an existing verified account. Roles are `EDITOR` or
+`VIEWER`; there is no ownership transfer. GET the same path to list members;
+PATCH `/projects/{id}/members/{userId}` changes `{role}`, DELETE revokes access.
+GET `/invitations` lists the recipient's pending invitations. POST
+`/invitations/{id}/accept` accepts; DELETE `/invitations/{id}` declines. Both return
+204, use the project ID, and require the invited account. Invitations send no email.
+See [permissions and concurrency](../docs/collaboration.md).
 
 A document is `{title?,nodes,scenarios}`. Nodes have unique nonempty `id`, `label`,
 numeric `x`/`y` within 0–100, and optional `notes`. Scenarios have `name`, an ordered
