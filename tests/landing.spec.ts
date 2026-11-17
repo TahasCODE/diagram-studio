@@ -1,0 +1,53 @@
+import {test,expect} from '@playwright/test';
+import {examples} from '../src/lib/examples';
+
+for(const width of [1440,1024,390])test(`product page scrolls to its footer and preserves the workspace at ${width}px`,async({page,context})=>{
+  await context.route(/^https:\/\/fonts\.(?:googleapis|gstatic)\.com\//,route=>route.abort());
+  await page.setViewportSize({width,height:900});
+  const workspace=JSON.stringify({...examples.refund,title:'My existing explanation'});
+  await page.addInitScript(value=>{if(!localStorage.getItem('diagram-studio-v1'))localStorage.setItem('diagram-studio-v1',value);},workspace);
+  const writes:string[]=[];page.on('request',r=>{if(r.url().includes('/api/')&&r.method()!=='GET')writes.push(r.url());});
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading',{level:1})).toHaveText(/Show how your\s*system behaves\./);
+  expect(await page.evaluate(()=>document.documentElement.scrollHeight>innerHeight)).toBe(true);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:`.runtime/landing-${width}-light.png`});
+  await page.getByRole('button',{name:'Use Dark Theme',exact:true}).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+  await page.screenshot({path:`.runtime/landing-${width}-dark.png`});
+  const footer=page.getByRole('contentinfo');await footer.scrollIntoViewIfNeeded();
+  await page.screenshot({path:`.runtime/landing-footer-${width}.png`});
+  await expect(footer.getByRole('link',{name:'GitHub',exact:true})).toHaveAttribute('href','https://github.com/TahasCODE/diagram-studio');
+  await expect(footer.getByRole('link',{name:'API Reference',exact:true})).toHaveAttribute('href','/api/docs');
+  await footer.getByRole('link',{name:'Demo Limits',exact:true}).click();
+  await expect(page.locator('#demo-limits')).toBeInViewport();
+  await expect(page.locator('#demo-limits')).toContainText('collaboration and comments are disabled');
+  expect(await page.evaluate(()=>localStorage.getItem('diagram-studio-v1'))).toBe(workspace);
+  expect(writes).toEqual([]);
+  await page.getByRole('link',{name:'Open Studio',exact:false}).first().click();
+  await expect(page.locator('#project-heading')).toHaveText('My existing explanation');
+  const help=page.getByLabel('Help & About',{exact:true});await help.click();
+  await expect(page.getByRole('navigation',{name:'Help & About Links'})).toBeVisible();
+  await page.screenshot({path:`.runtime/help-${width}.png`});
+  await page.keyboard.press('Escape');await expect(help).toBeFocused();
+  await expect(page.getByRole('navigation',{name:'Help & About Links'})).toBeHidden();
+  await help.click();await page.getByRole('link',{name:'Product Home',exact:true}).click();
+  await expect(page).toHaveURL('/welcome');await expect(page.getByRole('heading',{level:1})).toBeVisible();
+  await page.goto('/welcome#about');await expect(page.locator('#about')).toBeInViewport();
+});
+
+test('landing video plays with captions and walkthrough URLs still enter playback',async({page,context})=>{
+  await context.route(/^https:\/\/fonts\.(?:googleapis|gstatic)\.com\//,route=>route.abort());
+  await page.goto('/welcome/');
+  await expect(page.getByRole('heading',{level:1})).toBeVisible();
+  await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to content'})).toBeFocused();
+  const video=page.getByLabel('Captioned Diagram Studio guest demonstration');
+  await video.scrollIntoViewIfNeeded();
+  await video.evaluate(async element=>{const v=element as HTMLVideoElement;v.muted=true;await v.play();});
+  await expect.poll(()=>video.evaluate(element=>(element as HTMLVideoElement).currentTime)).toBeGreaterThan(0);
+  const metadata=await video.evaluate(element=>{const v=element as HTMLVideoElement;v.pause();return{duration:v.duration,captions:v.textTracks[0]?.cues?.length};});
+  expect(metadata.duration).toBeGreaterThan(80);expect(metadata.captions).toBeGreaterThan(0);
+  await page.getByRole('link',{name:'Try the Walkthrough',exact:false}).click();
+  await expect(page).toHaveURL('/?walkthrough=cache-outage');
+  await expect(page.getByRole('button',{name:'Start Walkthrough',exact:true})).toBeVisible();
+});

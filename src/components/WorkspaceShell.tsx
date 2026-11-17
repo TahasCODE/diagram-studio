@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Icon } from './Icon';
+import { HelpMenu } from './HelpMenu';
 export type Panel = 'playback' | 'editor' | 'project';
 interface Props {
   title: string; scenarioName: string; stepCount: number; nodeCount: number; scenarioCount: number;
@@ -30,7 +31,7 @@ export function WorkspaceShell(props: Props) {
   const tabs: {id:Panel;label:string}[] = [{id:'playback',label:'Playback'},...(!props.readOnly ? [{id:'editor' as const,label:'Editor'},{id:'project' as const,label:'Project'}] : [])];
   return <>
     <header className="app-header" inert={compact&&inspectorOpen}>
-      <a className="brand" href="/" aria-label="Diagram Studio Home"><span className="brand-mark"><Icon name="diagram" size={21}/></span><h1>Diagram Studio</h1></a>
+      <a className="brand" href="/welcome" aria-label="Diagram Studio Home"><span className="brand-mark"><Icon name="diagram" size={21}/></span><h1>Diagram Studio</h1></a>
       <div className="header-divider"/><span className="header-context">{props.walkthrough?'Guided walkthrough':props.guestDemo?'Guest Demo':props.projectRole&&props.projectRole!=='OWNER'?'Shared Project':props.readOnly?'Published diagram':props.isRemix?'Remix workspace':'Personal Workspace'}</span>
       <div className="actions header-actions"><span id="save-state" className={'save-state'+(props.saveError?' save-error':'')} role="status"><span className="status-dot"/>{props.saveLabel}</span>
         {props.onLogout&&<button id="header-logout" className="quiet-button" aria-label="Log Out" title="Log Out" disabled={props.busy} onClick={props.onLogout}><Icon name="logout" size={16}/><span>Log Out</span></button>}
@@ -45,7 +46,7 @@ export function WorkspaceShell(props: Props) {
         <div className="rail-divider"/>
         <button className={props.panel==='playback'?'is-active':''} onClick={() => onPanel('playback')} title="Scenario Playback" data-tooltip="Scenario playback" aria-pressed={props.panel==='playback'}><Icon name="play"/><span>Play</span></button>
         {!props.readOnly && <><button className={props.panel==='editor'?'is-active':''} onClick={() => onPanel('editor')} title="Edit Diagram" data-tooltip="Edit diagram" aria-pressed={props.panel==='editor'}><Icon name="edit"/><span>Edit</span></button><button className={props.panel==='project'?'is-active':''} onClick={() => onPanel('project')} title="Project Tools" data-tooltip="Project tools" aria-pressed={props.panel==='project'}><Icon name="file"/><span>Project</span></button><div className="rail-divider"/><button disabled={!props.canHistory||props.busy} onClick={props.onHistory} title={props.guestDemo?'Version History - Full Application Only':'Version History'} data-tooltip={props.guestDemo?'Full application only':'Version history'}><Icon name="history"/><span>History</span></button></>}
-        <span className="rail-footnote" title="Diagram Studio"><Icon name="diagram" size={16}/></span>
+        <HelpMenu/>
       </nav>
       <main>
         <div className="workspace" inert={compact&&inspectorOpen} onClick={event=>{if(compact&&(event.target as HTMLElement).closest('.node'))setInspectorOpen(true);}}>

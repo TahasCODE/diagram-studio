@@ -18,6 +18,8 @@ assert.ok(html.indexOf('/theme.js')<html.indexOf('type="module"'),'Theme must pr
 for(const script of scripts)await (await get(script[1],200,/(?:java|ecma)script/)).arrayBuffer();
 for(const link of html.matchAll(/<link\b[^>]*href="([^"]+\.css)"[^>]*>/g))if(link[1].startsWith('/'))await (await get(link[1],200,/text\/css/)).arrayBuffer();
 await (await get('/?walkthrough=cache-outage',200,/text\/html/)).text();
+await (await get('/welcome',200,/text\/html/)).text();
+await (await get('/welcome/',200,/text\/html/)).text();
 await (await get('/p/00000000-0000-0000-0000-000000000000',200,/text\/html/)).text();
 assert.equal((await (await get('/api/health',200,/application\/json/)).json()).status,'ok');checks++;
 assert.equal((await (await get('/api/auth/me',200,/application\/json/)).json()).user,null);checks++;

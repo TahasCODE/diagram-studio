@@ -25,6 +25,13 @@ Free hosting can take a while to wake after inactivity.
 For the full account-backed application locally, run npm.cmd start on Windows
 and open http://localhost:8090 after startup. Email setup is documented separately.
 
+The local [product introduction](http://localhost:8090/welcome) provides a
+scrollable feature overview, captioned demo and footer with GitHub, About, API
+Reference and demo-limit links. The editor stays at `/`; Help & About in its
+navigation rail opens the product page without changing existing playback URLs.
+This page is included in the source/local release; the hosted guest demo remains
+on its existing release until explicitly redeployed.
+
 [85-second demo script, case study and verified CV bullets](docs/portfolio.md)
 · [Deployment and post-deploy checks](docs/deployment.md)
 
