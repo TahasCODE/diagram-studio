@@ -17,6 +17,11 @@ use **Selected Node Type** to change its kind. **Automatic (from flow)** retains
 the original start/process/decision/end inference from scenario connections.
 The palette can be collapsed; the existing Add Node action is still available.
 
+To clear space, select a typed component on the canvas and choose **Delete
+Selected Component** inside the palette. Its name appears above the button.
+Only that instance is removed, along with its scenario steps. **Undo** restores
+the component and those steps; the existing Delete Node action is also available.
+
 Adding a node does not add it to a scenario automatically. Use Append Node or the
 existing step tools to choose where it appears in a path. Undo/redo and the
 500-node limit apply to click and drag additions. Read-only viewers cannot add

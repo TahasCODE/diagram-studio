@@ -1,0 +1,26 @@
+import {test,expect} from '@playwright/test';
+for(const width of [1440,1024,390])test(`delete a selected palette component and undo at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route(/^https:\/\/fonts\./,r=>r.abort());
+ await page.addInitScript(()=>localStorage.setItem('diagram-studio-v1',JSON.stringify({title:'Component cleanup',nodes:[{id:'client',label:'Caller',x:20,y:50},{id:'cache',label:'Cache',type:'cache',x:70,y:50}],scenarios:[{name:'Read',steps:['client','cache']},{name:'Retry',steps:['cache','client']}]})));
+ await page.goto('/');
+ if(width<1024)await page.getByRole('button',{name:'Open Inspector',exact:true}).click();
+ await page.getByRole('tab',{name:'Editor',exact:true}).click();
+ const remove=page.getByRole('button',{name:'Delete Selected Component',exact:true});
+ await expect(remove).toBeDisabled();
+ if(width<1024)await page.getByRole('button',{name:'Close Inspector',exact:true}).click();
+ await page.getByRole('button',{name:'Cache',exact:true}).click();
+ await expect(page.locator('.palette-selection')).toContainText('Selected: Cache');
+ await remove.click();await expect(page.getByRole('button',{name:'Cache',exact:true})).toHaveCount(0);
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('diagram-studio-v1')!).scenarios.every((s:{steps:string[]})=>!s.steps.includes('cache')))).toBe(true);
+ if(width<1024)await page.getByRole('button',{name:'Close Inspector',exact:true}).click();
+ await page.getByRole('button',{name:'Undo',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Cache',exact:true})).toBeVisible();
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('diagram-studio-v1')!).scenarios.every((s:{steps:string[]})=>s.steps.includes('cache')))).toBe(true);
+ if(width<1024)await page.getByRole('button',{name:'Open Inspector',exact:true}).click();
+ await page.getByRole('button',{name:'Add Cache',exact:true}).click();
+ await expect(page.locator('.palette-selection')).toContainText('Selected: Cache 2');
+ await remove.click();await expect(page.getByRole('button',{name:'Cache 2',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Cache',exact:true})).toHaveCount(1);
+ await page.screenshot({path:`.runtime/palette-delete-${width}.png`});
+});
