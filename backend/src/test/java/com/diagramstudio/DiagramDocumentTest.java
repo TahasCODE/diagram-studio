@@ -15,6 +15,11 @@ class DiagramDocumentTest {
         assertThrows(ResponseStatusException.class,() -> new DiagramDocument("Too large",oversized,scenarios).validate());
     }
     private DiagramDocument.Node node(String id) { return new DiagramDocument.Node(id,"Node",50.0,50.0,null); }
+    @Test void validatesTypedComponentsAndPreservesThemInPublications(){
+        var typed=new DiagramDocument("Cache",List.of(new DiagramDocument.Node("a","Redis",50.0,50.0,null,"cache")),List.of(new DiagramDocument.Scenario("Read",List.of("a"),null,null)));
+        assertEquals("cache",typed.validate().published().nodes().getFirst().type());
+        assertThrows(ResponseStatusException.class,()->new DiagramDocument("Bad",List.of(new DiagramDocument.Node("a","Node",50.0,50.0,null,"unknown")),typed.scenarios()).validate());
+    }
     @Test void acceptsRepeatedStepsAndEmptyGraphs() {
         assertDoesNotThrow(() -> new DiagramDocument("Loop",List.of(node("a")),List.of(new DiagramDocument.Scenario("Retry",List.of("a","a"),null,null))).validate());
         assertDoesNotThrow(() -> new DiagramDocument(null,List.of(),List.of(new DiagramDocument.Scenario("Empty",List.of(),null,null))).validate());

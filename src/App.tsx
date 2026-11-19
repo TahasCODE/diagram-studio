@@ -11,6 +11,8 @@ import { ConflictRecovery } from './components/ConflictRecovery';
 import { AccountSettings } from './components/AccountSettings';
 import { Collaboration } from './components/Collaboration';
 import { NodeComments } from './components/NodeComments';
+import {paletteNode} from './lib/nodeTypes';
+import type {NodeType} from './lib/nodeTypes';
 import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
 import { Icon } from './components/Icon';
@@ -203,6 +205,11 @@ export default function App() {
   const edit = (fn: (draft: Diagram) => void) => {
     const next = structuredClone(documentRef.current); fn(next);
     try { dispatch({type:'edit',document:parseDiagram(next)}); } catch(error) { setNotice(errorMessage(error)); }
+  };
+  const addPaletteNode=(type:NodeType,position?:{x:number;y:number})=>{
+    if(!editable||documentRef.current.nodes.length>=500)return;
+    const node=paletteNode(type,documentRef.current.nodes,position);
+    dispatch({type:'edit',document:{...documentRef.current,nodes:[...documentRef.current.nodes,node]}});setSelected(node.id);setPanel('editor');
   };
   const confirm = (title: string, message: string, action: () => void) => { setConfirmDetails({title,message,action}); setModal('confirm'); };
   const openDocument = (next: Diagram, source: CloudDraft | null = null) => {
@@ -461,7 +468,7 @@ export default function App() {
           <div className="panel-note"><Icon name="branch" size={16}/><p>Each scenario follows a different path through the same diagram.</p></div>
         </div>
         {editable && <>
-          <div id="panel-editor" role="tabpanel" aria-labelledby="tab-editor" hidden={panel!=='editor'}><Editor document={document} scenario={scenario} selected={selected} onSelect={setSelected} onChange={edit} onScenario={onScenario} confirm={confirm} onInspect={(index,target)=>{onScenario(index);setStep(target);setPanel('playback');}}/></div>
+          <div id="panel-editor" role="tabpanel" aria-labelledby="tab-editor" hidden={panel!=='editor'}><Editor onAddNode={type=>addPaletteNode(type)} document={document} scenario={scenario} selected={selected} onSelect={setSelected} onChange={edit} onScenario={onScenario} confirm={confirm} onInspect={(index,target)=>{onScenario(index);setStep(target);setPanel('playback');}}/></div>
           <div id="panel-project" role="tabpanel" aria-labelledby="tab-project" hidden={panel!=='project'}>
             <section className="project-overview"><p className="section-overline">PROJECT DETAILS</p><h2>{document.title||'Untitled Diagram'}</h2><p className="hint">{active?(active.role==='EDITOR'?'Shared project · Editor access.':'Private draft in your account.'):'A local draft in this browser.'}</p><dl className="project-facts"><div><dt>Nodes</dt><dd>{document.nodes.length}</dd></div><div><dt>Scenarios</dt><dd>{document.scenarios.length}</dd></div><div><dt>Online Version</dt><dd>{accountsEnabled?(active?.version||'Not Saved'):'Unavailable in Demo'}</dd></div></dl><button id="version-history" className="full-width" disabled={!active||busy} onClick={loadRevisions}><Icon name="history" size={16}/>Version History</button><p className="hint">{!accountsEnabled?'Online saves and version history are available in the full application, not this guest demo.':active?'Preview and restore any saved version.':'Save online to start tracking versions.'}</p></section>
             <section className="project-operations"><div className="section-heading"><Icon name="history" size={17}/><h2>Activity & Reference</h2></div><p className="hint">Review saved project actions and explore the Java API.</p><div className="actions"><button id="project-activity" disabled={!active||busy} onClick={() => loadActivity(0,active?.id)}>Project Activity</button><a className="button-link" href="/api/docs" target="_blank" rel="noreferrer">API Reference<Icon name="external" size={14}/></a></div></section>
@@ -473,7 +480,7 @@ export default function App() {
         </>}
       </>}
     >
-      {modal!=='presentation'&&<Canvas onDiscuss={active&&user&&accountsEnabled&&!readOnly?nodeId=>setComments({nodeId}):undefined} onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={!editable} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
+      {modal!=='presentation'&&<Canvas onAddNode={editable?addPaletteNode:undefined} onDiscuss={active&&user&&accountsEnabled&&!readOnly?nodeId=>setComments({nodeId}):undefined} onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={!editable} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
     </WorkspaceShell>
 
     {comments&&active&&user&&accountsEnabled&&!readOnly&&<NodeComments projectId={active.id} actorId={user.id} role={active.role??'OWNER'} nodes={document.nodes} initialNodeId={comments.nodeId} onClose={()=>setComments(null)}/>}

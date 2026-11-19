@@ -96,6 +96,8 @@ require CSRF. Comments are separate from drafts, publications and exports.
 See [node comment behavior](../docs/node-comments.md).
 
 A document is `{title?,nodes,scenarios}`. Nodes have unique nonempty `id`, `label`,
+an optional `type` (`client`, `api`, `service`, `database`, `cache`, `queue` or
+`decision`; null/omitted retains automatic icons),
 numeric `x`/`y` within 0–100, and optional `notes`. Scenarios have `name`, an ordered
 `steps` array of existing node IDs (repetitions allowed), optional `description`,
 and optional `review` strings. At least one scenario is required; empty graphs and

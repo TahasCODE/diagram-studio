@@ -60,8 +60,9 @@ class BackendWorkflowIT {
         client.call("/api/auth/verify-email","POST",Map.of("email",email,"code",code),204);
         client.call("/api/auth/verify-email","POST",Map.of("email",email,"code",code),400);
         client.call("/api/auth/login","POST",Map.of("email",email,"password","IntegrationPassword123"),200);
-        var document=Map.of("title","Concurrency 100%_proof","nodes",List.of(Map.of("id","a","label","Start","x",20,"y",50)),"scenarios",List.of(Map.of("name","Main","steps",List.of("a"))));
+        var document=Map.of("title","Concurrency 100%_proof","nodes",List.of(Map.of("id","a","label","Start","x",20,"y",50,"type","api")),"scenarios",List.of(Map.of("name","Main","steps",List.of("a"))));
         var draft=client.call("/api/projects","POST",Map.of("document",document),201);
+        assertEquals("api",((Map<?,?>)((List<?>)((Map<?,?>)draft.get("document")).get("nodes")).getFirst()).get("type"));
         UUID id=UUID.fromString((String)draft.get("id"));
         var first=client.http.sendAsync(client.request("/api/projects/"+id,"PUT",Map.of("version",1,"document",document)),HttpResponse.BodyHandlers.ofString());
         var second=client.http.sendAsync(client.request("/api/projects/"+id,"PUT",Map.of("version",1,"document",document)),HttpResponse.BodyHandlers.ofString());

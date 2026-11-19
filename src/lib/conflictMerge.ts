@@ -50,7 +50,8 @@ export function mergeConflict(baseRaw:Diagram,localRaw:Diagram,serverRaw:Diagram
       const label=pick(['node',id,'label'],`${name} · Label`,b.label,l.label,r.label);
       const position=pick(['node',id,'position'],`${name} · Position`,{x:b.x,y:b.y},{x:l.x,y:l.y},{x:r.x,y:r.y});
       const notes=pick(['node',id,'notes'],`${name} · Notes`,b.notes??'',l.notes??'',r.notes??'');
-      nodes.push({id,label,...position,notes});
+      const type=pick(['node',id,'type'],`${name} · Type`,b.type??null,l.type??null,r.type??null);
+      nodes.push({id,label,...position,notes,...(type?{type}:{})});
     }
   }
   // No scenario IDs exist yet. Do not guess identities across renames, duplicate

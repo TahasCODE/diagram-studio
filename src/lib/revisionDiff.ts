@@ -47,7 +47,7 @@ function compareEntries<T>(before:Map<string,T>,after:Map<string,T>,values:(entr
 }
 
 export function compareRevisions(before:Diagram,after:Diagram){
-  const nodeValues=(node:DiagramNode)=>({Label:node.label,Position:`${node.x}%, ${node.y}%`,Notes:optional(node.notes)});
+  const nodeValues=(node:DiagramNode)=>({Label:node.label,Type:node.type??'Automatic',Position:`${node.x}%, ${node.y}%`,Notes:optional(node.notes)});
   const nodes=compareEntries(new Map(before.nodes.map(node=>[node.id,node])),new Map(after.nodes.map(node=>[node.id,node])),nodeValues);
   const beforeScenarios=scenarioEntries(before.scenarios),afterScenarios=scenarioEntries(after.scenarios);
   const scenarioValues=(scenario:Scenario)=>({Steps:JSON.stringify(scenario.steps),Description:optional(scenario.description),'Review notes':JSON.stringify([...(scenario.review??[])].sort())});

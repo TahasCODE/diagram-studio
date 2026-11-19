@@ -7,7 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 public record DiagramDocument(String title, List<Node> nodes, List<Scenario> scenarios) {
-    public record Node(String id, String label, Double x, Double y, String notes) {}
+    public record Node(String id, String label, Double x, Double y, String notes,
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) String type) {
+        public Node(String id,String label,Double x,Double y,String notes){this(id,label,x,y,notes,null);}
+    }
     public record Scenario(String name, List<String> steps, String description, List<String> review) {}
 
     public DiagramDocument validate() {
@@ -20,6 +23,7 @@ public record DiagramDocument(String title, List<Node> nodes, List<Scenario> sce
             check(ids.add(node.id()), "Node IDs must be unique.");
             check(node.x() != null && node.y() != null && Double.isFinite(node.x()) && Double.isFinite(node.y()) && node.x() >= 0 && node.x() <= 100 && node.y() >= 0 && node.y() <= 100, "Node positions must be within the canvas.");
             check(node.notes() == null || node.notes().length() <= 2000, "Node notes are too long.");
+            check(node.type()==null||Set.of("client","api","service","database","cache","queue","decision").contains(node.type()),"Unknown node type.");
         }
         for (Scenario scenario : scenarios) {
             check(scenario != null && text(scenario.name(), 48), "Every scenario needs a name.");
