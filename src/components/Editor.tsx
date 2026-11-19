@@ -29,6 +29,11 @@ export function Editor({document, scenario, selected, onSelect, onChange, onScen
   const [newName, setNewName] = useState('');
   const current = document.scenarios[scenario];
   const node = document.nodes.find(n => n.id === selected);
+  const removeNode=()=>{
+    if(!node)return;
+    onChange(d=>{flagScenarios(d,node.id,`Deleted “${node.label}”; its steps were removed.`);d.nodes=d.nodes.filter(n=>n.id!==node.id);for(const s of d.scenarios)s.steps=s.steps.filter(id=>id!==node.id);});
+    onSelect(document.nodes.find(n=>n.id!==node.id)?.id);
+  };
   const index = Math.min(route, current.steps.length-1);
   useEffect(() => setRoute(0), [scenario]);
   const addScenario = (branch: boolean) => {
@@ -48,13 +53,13 @@ export function Editor({document, scenario, selected, onSelect, onChange, onScen
     <p className="hint">Drag to arrange. Reuse nodes across every scenario. Text changes save when you leave a field.</p>
     <Field id="project-title" label="Project Title" value={document.title || ''} max={80} placeholder="e.g. Order Processing System" onCommit={value => onChange(d => { d.title = value; })}/>
     <button id="auto-arrange" disabled={!document.nodes.length} onClick={() => onChange(d => Object.assign(d, arrangeNodes(d,scenario,globalThis.document.querySelector('.diagram-plane')?.clientWidth || 900)))}><Icon name="arrange" size={15}/>Arrange Nodes</button>
-    <NodePalette onAdd={onAddNode} disabled={document.nodes.length>=500}/>
+    <NodePalette onAdd={onAddNode} disabled={document.nodes.length>=500} selectedLabel={node?.type?node.label:undefined} onRemove={node?.type?removeNode:undefined}/>
     <label htmlFor="node-kind">Selected Node Type</label><select id="node-kind" value={node?.type??''} disabled={!node} onChange={event=>{if(!node)return;const type=event.target.value as NodeType|'';onChange(d=>{const target=d.nodes.find(n=>n.id===node.id)!;if(type)target.type=type;else delete target.type;flagScenarios(d,node.id,`Changed the type of “${node.label}”.`);});}}><option value="">Automatic (from flow)</option>{NODE_TYPE_KEYS.map(type=><option value={type} key={type}>{NODE_TYPES[type].label}</option>)}</select>
     <Field id="label" label="Selected Node Label" value={node?.label || ''} disabled={!node} placeholder="Give this step a clear name" onCommit={value => { if (!value || !node) return; onChange(d => { flagScenarios(d,node.id,`Renamed “${node.label}” to “${value}”.`); d.nodes.find(n => n.id === node.id)!.label = value; }); }}/>
     <details className="editor-details"><summary>Node Notes</summary><Field key={selected} id="node-notes" label="Explain This Node" value={node?.notes || ''} disabled={!node} multiline max={2000} placeholder="What happens here? Notes appear during playback." onCommit={value => { if (node) onChange(d => { flagScenarios(d,node.id,`Updated notes for “${node.label}”.`); d.nodes.find(n => n.id === node.id)!.notes = value; }); }}/></details>
     <div className="actions editor-actions"><button id="add" disabled={document.nodes.length >= 500} onClick={() => {
       const id = crypto.randomUUID(); onChange(d => d.nodes.push({id,label:'New Node',x:50,y:70})); onSelect(id);
-    }}><Icon name="plus" size={15}/>Add Node</button><button id="remove" className="danger" disabled={!node} onClick={() => { if (!node) return; onChange(d => { flagScenarios(d,node.id,`Deleted “${node.label}”; its steps were removed.`); d.nodes = d.nodes.filter(n => n.id !== node.id); for (const s of d.scenarios) s.steps = s.steps.filter(id => id !== node.id); }); onSelect(document.nodes.find(n => n.id !== node.id)?.id); }}><Icon name="trash" size={14}/>Delete Node</button></div>
+    }}><Icon name="plus" size={15}/>Add Node</button><button id="remove" className="danger" disabled={!node} onClick={removeNode}><Icon name="trash" size={14}/>Delete Node</button></div>
     <div className="editor-divider"/>
     <Field key={'name'+scenario} id="scenario-name" label="Current Scenario Name" value={current.name} onCommit={value => { if (value) onChange(d => { d.scenarios[scenario].name = value; }); }}/>
     <div className="actions"><button id="duplicate-scenario" disabled={document.scenarios.length >= 100} onClick={() => {
