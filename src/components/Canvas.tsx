@@ -105,7 +105,7 @@ export function Canvas(props:Props){
         })}</div>
       </div>
     </div>
-    {paletteOver&&!props.readOnly&&<div className="palette-drop-hint">Drop to Add Component</div>}
+    {paletteOver&&!props.readOnly&&<div className="palette-drop-hint"><span>Drop to Add Component</span></div>}
     {!nodes.length&&<div className="empty-canvas"><strong>{props.presentation?'No nodes to present.':'Your next explanation starts here.'}</strong><p>{props.presentation?'Exit presentation to add nodes and build a scenario.':'Add a node, then build a scenario.'}</p></div>}
     <div className="canvas-legend"><span><i className="legend-active"/>Current step</span>{!props.readOnly&&<span><i className="legend-selected"/>Selected node</span>}</div>
     {!!nodes.length&&<button className="minimap" aria-label="Fit Diagram from Minimap" title="Diagram overview · Click to fit" onClick={fit}><svg viewBox={`0 0 ${size.width} ${size.height}`} aria-hidden="true">{routes.map(route=><path key={route.key} d={route.path} fill="none" stroke="var(--edge)" strokeWidth="4"/>)}{boxes.map(box=><rect key={box.id} className={'minimap-node'+(path[props.step]===box.id?' current':'')} x={box.x-box.width/2} y={box.y-box.height/2} width={box.width} height={box.height} rx={12}/>)}<rect className="minimap-viewport" x={-pan.x/zoom} y={-pan.y/zoom} width={viewport.width/zoom} height={viewport.height/zoom} rx={8}/></svg></button>}
