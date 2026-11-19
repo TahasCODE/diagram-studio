@@ -11,10 +11,21 @@ export type NodeType=keyof typeof NODE_TYPES;
 export const NODE_TYPE_KEYS=Object.keys(NODE_TYPES) as NodeType[];
 export const PALETTE_MIME='application/x-diagram-studio-node';
 export const isNodeType=(value:unknown):value is NodeType=>typeof value==='string'&&Object.hasOwn(NODE_TYPES,value);
-export function paletteNode(type:NodeType,nodes:{label:string;x:number;y:number}[],position?:{x:number;y:number}){
+export interface NodePlacementBounds {width:number;height:number;nodeWidth:number;nodeHeight:number}
+export function paletteNode(type:NodeType,nodes:{label:string;x:number;y:number}[],position?:{x:number;y:number},bounds:NodePlacementBounds={width:900,height:600,nodeWidth:160,nodeHeight:72}){
   let label:string=NODE_TYPES[type].label,suffix=2;
   while(nodes.some(node=>node.label===label))label=`${NODE_TYPES[type].label} ${suffix++}`;
-  const spots=Array.from({length:16},(_,i)=>({x:16+(i%4)*22,y:20+Math.floor(i/4)*20}));
-  const point=position??spots.find(p=>nodes.every(n=>Math.abs(n.x-p.x)>14||Math.abs(n.y-p.y)>14))??{x:50,y:50};
-  return{id:crypto.randomUUID(),label,type,x:Math.max(5,Math.min(95,point.x)),y:Math.max(5,Math.min(95,point.y))};
+  const gap=16,scan=8;
+  const marginX=(bounds.nodeWidth/2+gap)/bounds.width*100,marginY=(bounds.nodeHeight/2+gap)/bounds.height*100;
+  const clear=(p:{x:number;y:number})=>nodes.every(n=>Math.abs(n.x-p.x)*bounds.width/100>=bounds.nodeWidth+gap||Math.abs(n.y-p.y)*bounds.height/100>=bounds.nodeHeight+gap);
+  const preferred=position?{x:Math.max(marginX,Math.min(100-marginX,position.x)),y:Math.max(marginY,Math.min(100-marginY,position.y))}:undefined;
+  if(preferred&&clear(preferred))return{id:crypto.randomUUID(),label,type,...preferred};
+  let point:{x:number;y:number}|undefined,best=Infinity;
+  for(let y=marginY;y<=100-marginY;y+=scan/bounds.height*100)for(let x=marginX;x<=100-marginX;x+=scan/bounds.width*100){
+    const p={x,y};if(!clear(p))continue;
+    const score=preferred?Math.hypot((x-preferred.x)*bounds.width,(y-preferred.y)*bounds.height):y*bounds.height+x;
+    if(score<best){best=score;point=p;}
+  }
+  if(!point)throw new Error('No empty space for another component. Move existing nodes apart or remove unused nodes, then try again.');
+  return{id:crypto.randomUUID(),label,type,...point};
 }

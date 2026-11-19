@@ -1,5 +1,6 @@
 import {isNodeType} from './nodeTypes';
 import type {NodeType} from './nodeTypes';
+import {CANVAS_UI} from './diagramGeometry';
 export interface DiagramNode { id: string; label: string; x: number; y: number; notes?: string; type?:NodeType }
 export interface Scenario { name: string; steps: string[]; description?: string; review?: string[] }
 export interface Diagram { title?: string; nodes: DiagramNode[]; scenarios: Scenario[] }
@@ -72,9 +73,12 @@ export function arrangeNodes(document: Diagram, scenario: number, width: number)
   }
   for(const id of ids)if(!ranks.has(id))ranks.set(id,Math.max(0,...ranks.values())+1);
   const depth=Math.max(0,...ranks.values())+1;
-  const columns=Math.min(depth,Math.max(1,Math.floor(width/180)));
+  const cardWidth=Math.min(CANVAS_UI.nodeWidth,Math.max(CANVAS_UI.nodeMinWidth,width*CANVAS_UI.nodeRatio));
+  const columns=Math.min(depth,Math.max(1,Math.floor(width*.68/(cardWidth+16))+1));
   const groups=Array.from({length:columns},()=>[] as string[]);
-  for(const id of ids)groups[ranks.get(id)!%columns].push(id);
+  const isolated=ids.filter(id=>!incoming.has(id)&&!links.has(id));
+  for(const id of ids)if(!isolated.includes(id))groups[ranks.get(id)!%columns].push(id);
+  for(const id of isolated){const smallest=groups.reduce((best,group)=>group.length<best.length?group:best);smallest.push(id);}
   groups.forEach((group,column)=>{
     group.sort((a,b)=>ranks.get(a)!-ranks.get(b)!);
     group.forEach((id,row)=>{const node=byId.get(id)!;node.x=columns===1?50:16+column*68/(columns-1);node.y=group.length===1?50:20+row*60/(group.length-1);});

@@ -7,7 +7,7 @@ import { Icon } from './Icon';
 import { ImageExport } from './ImageExport';
 import {NodeGlyph} from './NodeGlyph';
 import {isNodeType,PALETTE_MIME,NODE_TYPES} from '../lib/nodeTypes';
-import type {NodeType} from '../lib/nodeTypes';
+import type {NodeType,NodePlacementBounds} from '../lib/nodeTypes';
 interface Props {
   document:Diagram; scenario:number; step:number; selected?:string; readOnly:boolean;
   onSelect:(id:string)=>void; onChange:(document:Diagram)=>void;
@@ -15,6 +15,7 @@ interface Props {
   onPresent?:()=>void; presentation?:boolean;
   onDiscuss?:(nodeId:string)=>void;
   onAddNode?:(type:NodeType,position:{x:number;y:number})=>void;
+  onPlacementBounds?:(bounds:NodePlacementBounds)=>void;
 }
 export function Canvas(props:Props){
   const [exportOpen,setExportOpen]=useState(false);
@@ -22,7 +23,7 @@ export function Canvas(props:Props){
   useEffect(()=>{const clear=()=>setPaletteOver(false);window.addEventListener('dragend',clear);window.addEventListener('drop',clear);return()=>{window.removeEventListener('dragend',clear);window.removeEventListener('drop',clear);};},[]);
   const board=useRef<HTMLDivElement>(null);
   const [viewport,setSize]=useState({width:900,height:600});
-  const size={width:Math.max(viewport.width,UI.minPlaneWidth),height:props.presentation?Math.max(viewport.height,UI.presentationPlaneHeight):viewport.height};
+  const size={width:Math.max(viewport.width,UI.minPlaneWidth),height:Math.max(viewport.height,UI.presentationPlaneHeight)};
   const minZoom=props.presentation?UI.presentationMinZoom:UI.minZoom;
   const [position,setPosition]=useState<{id:string;x:number;y:number}|null>(null);
   const [zoom,setZoom]=useState(1),[pan,setPan]=useState({x:0,y:0});
@@ -32,6 +33,7 @@ export function Canvas(props:Props){
   useEffect(()=>{const observer=new ResizeObserver(entries=>{const bounds=entries[0].contentRect;setSize({width:Math.max(1,bounds.width),height:Math.max(1,bounds.height)});});if(board.current)observer.observe(board.current);return()=>observer.disconnect();},[]);
   const nodeWidth=Math.min(UI.nodeWidth,Math.max(UI.nodeMinWidth,size.width*UI.nodeRatio));
   const nodeHeight=viewport.width<500?UI.mobileNodeHeight:UI.nodeHeight;
+  useEffect(()=>{props.onPlacementBounds?.({width:size.width,height:size.height,nodeWidth,nodeHeight});},[size.width,size.height,nodeWidth,nodeHeight,props.onPlacementBounds]);
   const nodes=useMemo(()=>position?props.document.nodes.map(n=>position.id===n.id?{...n,x:position.x,y:position.y}:n):props.document.nodes,[props.document.nodes,position]);
   const path=props.document.scenarios[props.scenario]?.steps||[];
   useEffect(()=>{
@@ -76,7 +78,7 @@ export function Canvas(props:Props){
     const next=Math.max(minZoom,Math.min(1.5,(viewport.width-UI.fitPadding)/(right-left),(viewport.height-UI.fitPadding)/(bottom-top)));
     setZoom(next);setPan({x:viewport.width/2-(left+right)/2*next,y:viewport.height/2-(top+bottom)/2*next});
   };
-  useEffect(()=>{if(props.presentation)fit();},[props.presentation,viewport.width,viewport.height]);
+  useEffect(()=>{if(props.presentation||viewport.height<size.height)fit();},[props.presentation,viewport.width,viewport.height,props.document.nodes.length]);
   return <section className="board" aria-label="Diagram" data-compact={viewport.width<600} style={{'--node-width':nodeWidth+'px','--node-height':nodeHeight+'px'} as CSSProperties}>
     <div className="canvas-toolbar"><span className="canvas-title"><Icon name="diagram" size={16}/>System Diagram</span><div className="canvas-tools">
       {props.onPresent&&<button id="present-diagram" className="canvas-action" title="Present Diagram" aria-label="Present Diagram" onClick={props.onPresent}><Icon name="play" size={16}/></button>}
