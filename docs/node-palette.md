@@ -5,6 +5,13 @@ Cache, Queue or Decision to add a component. On desktop, drag a palette button
 onto the canvas to choose its position. Drops account for zoom and pan, and keep
 the node inside the canvas. Touch and keyboard users can use the same buttons.
 
+Placement checks the actual card sizes, including gaps, against every existing
+node. Click additions use empty space; a drop over another card moves to the
+nearest clear position. A full canvas shows a message rather than stacking cards.
+Short windows use a taller, pannable diagram plane and fit the diagram to view.
+For a draft that already contains overlapping cards, use **Arrange Nodes**, then
+**Fit Diagram** to repair its layout.
+
 New components get distinct icons and a unique default label. Select a node and
 use **Selected Node Type** to change its kind. **Automatic (from flow)** retains
 the original start/process/decision/end inference from scenario connections.

@@ -22,7 +22,7 @@ for(const width of [1440,1024,390])test(`polished workspace remains usable at ${
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await expect(page.locator('.workspace-description')).toContainText(`${examples.refund.scenarios[0].steps.length} path steps`);
   await expect(page.locator('.workspace-description')).toContainText(`${examples.refund.nodes.length} diagram nodes`);
-  await page.getByRole('button',{name:'Zoom In',exact:true}).click();await expect(page.getByRole('button',{name:'Reset Zoom'})).toHaveText('110%');
+  await page.getByRole('button',{name:'Reset Zoom'}).click();await page.getByRole('button',{name:'Zoom In',exact:true}).click();await expect(page.getByRole('button',{name:'Reset Zoom'})).toHaveText('110%');
   await page.getByRole('button',{name:'Reset Zoom'}).click();await expect(page.getByRole('button',{name:'Reset Zoom'})).toHaveText('100%');
   await page.getByRole('button',{name:'Fit Diagram',exact:true}).click();
   if(width<1024)await page.getByRole('button',{name:'Open Inspector',exact:true}).click();

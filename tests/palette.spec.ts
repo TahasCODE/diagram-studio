@@ -8,6 +8,7 @@ test('typed components survive saves, snapshots and zoomed canvas drops',async({
   await page.locator('#save-online').click();await expect(page.locator('#save-state')).toHaveText('Saved Online');
   let saved=await ownedProject.api('/projects/'+ownedProject.draft.id);
   expect(saved.document.nodes.find((n:any)=>n.label==='Database 2').type).toBe('database');
+  await page.getByRole('button',{name:'Reset Zoom',exact:true}).click();
   await page.getByRole('button',{name:'Zoom In',exact:true}).click();
   await expect(page.getByRole('button',{name:'Reset Zoom',exact:true})).toHaveText('110%');
   const stage=await page.getByLabel('Diagram Viewport',{exact:true}).boundingBox();

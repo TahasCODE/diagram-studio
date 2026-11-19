@@ -25,6 +25,18 @@ describe('typed components across document boundaries',()=>{
   });
   it('uses distinct defaults and bounded drop positions',()=>{
     const first=paletteNode('database',[]),second=paletteNode('database',[first],{x:-20,y:150});
-    expect(second.label).toBe('Database 2');expect(second.x).toBe(5);expect(second.y).toBe(95);
+    expect(second.label).toBe('Database 2');expect(second.x).toBeGreaterThan(5);expect(second.y).toBeLessThan(95);
+  });
+  it('places components clear of the order flow using rendered dimensions and rejects a full plane',()=>{
+    const bounds={width:740,height:600,nodeWidth:148,nodeHeight:72};
+    const nodes=[{label:'Receive',x:14,y:50},{label:'Inventory',x:37,y:50},{label:'Pack',x:62,y:32},{label:'Ship',x:86,y:32},{label:'Restock',x:62,y:72}];
+    for(const type of NODE_TYPE_KEYS){
+      const next=paletteNode(type,nodes,undefined,bounds);
+      expect(nodes.every(n=>Math.abs(n.x-next.x)*bounds.width/100>=bounds.nodeWidth+15.9||Math.abs(n.y-next.y)*bounds.height/100>=bounds.nodeHeight+15.9)).toBe(true);
+      nodes.push(next);
+    }
+    const dropped=paletteNode('api',nodes,{x:37,y:50},bounds);
+    expect(dropped.x!==37||dropped.y!==50).toBe(true);
+    expect(()=>paletteNode('api',[{label:'Full',x:50,y:50}],undefined,{width:160,height:72,nodeWidth:160,nodeHeight:72})).toThrow('No empty space');
   });
 });

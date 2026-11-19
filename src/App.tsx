@@ -12,7 +12,7 @@ import { AccountSettings } from './components/AccountSettings';
 import { Collaboration } from './components/Collaboration';
 import { NodeComments } from './components/NodeComments';
 import {paletteNode} from './lib/nodeTypes';
-import type {NodeType} from './lib/nodeTypes';
+import type {NodeType,NodePlacementBounds} from './lib/nodeTypes';
 import { WorkspaceShell } from './components/WorkspaceShell';
 import type { Panel } from './components/WorkspaceShell';
 import { Icon } from './components/Icon';
@@ -206,9 +206,12 @@ export default function App() {
     const next = structuredClone(documentRef.current); fn(next);
     try { dispatch({type:'edit',document:parseDiagram(next)}); } catch(error) { setNotice(errorMessage(error)); }
   };
+  const placementBounds=useRef<NodePlacementBounds>({width:900,height:600,nodeWidth:160,nodeHeight:72});
+  const onPlacementBounds=useCallback((bounds:NodePlacementBounds)=>{placementBounds.current=bounds;},[]);
   const addPaletteNode=(type:NodeType,position?:{x:number;y:number})=>{
     if(!editable||documentRef.current.nodes.length>=500)return;
-    const node=paletteNode(type,documentRef.current.nodes,position);
+    let node;
+    try{node=paletteNode(type,documentRef.current.nodes,position,placementBounds.current);}catch(error){setNotice(errorMessage(error));return;}
     dispatch({type:'edit',document:{...documentRef.current,nodes:[...documentRef.current.nodes,node]}});setSelected(node.id);setPanel('editor');
   };
   const confirm = (title: string, message: string, action: () => void) => { setConfirmDetails({title,message,action}); setModal('confirm'); };
@@ -480,7 +483,7 @@ export default function App() {
         </>}
       </>}
     >
-      {modal!=='presentation'&&<Canvas onAddNode={editable?addPaletteNode:undefined} onDiscuss={active&&user&&accountsEnabled&&!readOnly?nodeId=>setComments({nodeId}):undefined} onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={!editable} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
+      {modal!=='presentation'&&<Canvas onPlacementBounds={onPlacementBounds} onAddNode={editable?addPaletteNode:undefined} onDiscuss={active&&user&&accountsEnabled&&!readOnly?nodeId=>setComments({nodeId}):undefined} onPresent={()=>setModal('presentation')} document={document} scenario={scenario} step={step} selected={selected} readOnly={!editable} onSelect={id => {setSelected(id);setPanel('editor');}} onChange={next => dispatch({type:'edit',document:next})} onUndo={() => dispatch({type:'undo'})} onRedo={() => dispatch({type:'redo'})} canUndo={!!history.past.length} canRedo={!!history.future.length}/>}
     </WorkspaceShell>
 
     {comments&&active&&user&&accountsEnabled&&!readOnly&&<NodeComments projectId={active.id} actorId={user.id} role={active.role??'OWNER'} nodes={document.nodes} initialNodeId={comments.nodeId} onClose={()=>setComments(null)}/>}
