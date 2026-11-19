@@ -5553,6 +5553,23 @@
               "null"
             ],
             "maxLength": 2000
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "client",
+              "api",
+              "service",
+              "database",
+              "cache",
+              "queue",
+              "decision",
+              null
+            ],
+            "description": "Optional explicit component type; omitted/null retains legacy automatic icons."
           }
         }
       },

@@ -3,6 +3,9 @@ import type { Diagram } from '../lib/model';
 import { Icon } from './Icon';
 import { ScenarioReview } from './ScenarioReview';
 import { arrangeNodes, flagScenarios } from '../lib/model';
+import {NodePalette} from './NodePalette';
+import {NODE_TYPES,NODE_TYPE_KEYS} from '../lib/nodeTypes';
+import type {NodeType} from '../lib/nodeTypes';
 
 function Field({id, label, value, onCommit, multiline = false, max = 48, disabled = false, placeholder}: {
   id: string; label: string; value: string; onCommit: (value: string) => void; multiline?: boolean; max?: number; disabled?: boolean; placeholder?: string;
@@ -18,8 +21,9 @@ interface Props {
   onChange: (edit: (draft: Diagram) => void) => void; onScenario: (index: number) => void;
   confirm: (title: string, message: string, action: () => void) => void;
   onInspect:(scenario:number,step:number)=>void;
+  onAddNode:(type:NodeType)=>void;
 }
-export function Editor({document, scenario, selected, onSelect, onChange, onScenario, confirm, onInspect}: Props) {
+export function Editor({document, scenario, selected, onSelect, onChange, onScenario, confirm, onInspect,onAddNode}: Props) {
   const [route, setRoute] = useState(0);
   const [branchName, setBranchName] = useState('');
   const [newName, setNewName] = useState('');
@@ -44,6 +48,8 @@ export function Editor({document, scenario, selected, onSelect, onChange, onScen
     <p className="hint">Drag to arrange. Reuse nodes across every scenario. Text changes save when you leave a field.</p>
     <Field id="project-title" label="Project Title" value={document.title || ''} max={80} placeholder="e.g. Order Processing System" onCommit={value => onChange(d => { d.title = value; })}/>
     <button id="auto-arrange" disabled={!document.nodes.length} onClick={() => onChange(d => Object.assign(d, arrangeNodes(d,scenario,globalThis.document.querySelector('.board')?.clientWidth || 900)))}><Icon name="arrange" size={15}/>Arrange Nodes</button>
+    <NodePalette onAdd={onAddNode} disabled={document.nodes.length>=500}/>
+    <label htmlFor="node-kind">Selected Node Type</label><select id="node-kind" value={node?.type??''} disabled={!node} onChange={event=>{if(!node)return;const type=event.target.value as NodeType|'';onChange(d=>{const target=d.nodes.find(n=>n.id===node.id)!;if(type)target.type=type;else delete target.type;flagScenarios(d,node.id,`Changed the type of “${node.label}”.`);});}}><option value="">Automatic (from flow)</option>{NODE_TYPE_KEYS.map(type=><option value={type} key={type}>{NODE_TYPES[type].label}</option>)}</select>
     <Field id="label" label="Selected Node Label" value={node?.label || ''} disabled={!node} placeholder="Give this step a clear name" onCommit={value => { if (!value || !node) return; onChange(d => { flagScenarios(d,node.id,`Renamed “${node.label}” to “${value}”.`); d.nodes.find(n => n.id === node.id)!.label = value; }); }}/>
     <details className="editor-details"><summary>Node Notes</summary><Field key={selected} id="node-notes" label="Explain This Node" value={node?.notes || ''} disabled={!node} multiline max={2000} placeholder="What happens here? Notes appear during playback." onCommit={value => { if (node) onChange(d => { flagScenarios(d,node.id,`Updated notes for “${node.label}”.`); d.nodes.find(n => n.id === node.id)!.notes = value; }); }}/></details>
     <div className="actions editor-actions"><button id="add" disabled={document.nodes.length >= 500} onClick={() => {

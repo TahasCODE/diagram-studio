@@ -5,6 +5,10 @@ private drafts, publish fixed playback snapshots, and let readers explore or
 remix those snapshots without an account. The original standalone prototype is
 preserved in `legacy/`.
 
+The [visual component palette](docs/node-palette.md) adds Client, API, Service,
+Database, Cache, Queue and Decision nodes by click or canvas drop. Component types
+stay with the diagram through saves, remixing and exports; old diagrams still work.
+
 **[Try the live walkthrough](https://diagram-studio-demo.onrender.com/?walkthrough=cache-outage)**
 | [Open the editor](https://diagram-studio-demo.onrender.com/)
 | [Watch the 86-second demo](https://diagram-studio-demo.onrender.com/demo.html)

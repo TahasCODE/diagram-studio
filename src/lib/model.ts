@@ -1,4 +1,6 @@
-export interface DiagramNode { id: string; label: string; x: number; y: number; notes?: string }
+import {isNodeType} from './nodeTypes';
+import type {NodeType} from './nodeTypes';
+export interface DiagramNode { id: string; label: string; x: number; y: number; notes?: string; type?:NodeType }
 export interface Scenario { name: string; steps: string[]; description?: string; review?: string[] }
 export interface Diagram { title?: string; nodes: DiagramNode[]; scenarios: Scenario[] }
 export const STORAGE_KEY = 'diagram-studio-v1';
@@ -19,8 +21,9 @@ export function parseDiagram(raw: unknown): Diagram {
     throw new Error('A project supports 500 nodes and 1–100 scenarios.');
   const nodes = data.nodes.map(value => {
     const node = record(value);
+    if(node.type!=null&&!isNodeType(node.type))throw new Error('Unknown node type.');
     if (![node.x, node.y].every(n => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100)) throw new Error('Invalid node positions.');
-    return { id: text(node.id, 100)!, label: text(node.label, 48)!, x: node.x as number, y: node.y as number, notes: text(node.notes, 2000, true) };
+    return { id: text(node.id, 100)!, label: text(node.label, 48)!, x: node.x as number, y: node.y as number, notes: text(node.notes, 2000, true),...(node.type==null?{}:{type:node.type as NodeType}) };
   });
   const ids = new Set(nodes.map(n => n.id));
   if (ids.size !== nodes.length) throw new Error('Node IDs must be unique.');

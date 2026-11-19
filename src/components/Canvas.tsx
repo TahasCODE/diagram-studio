@@ -1,19 +1,25 @@
-﻿import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Diagram } from '../lib/model';
 import { CANVAS_UI as UI, placeConnectionLabel, routeConnection } from '../lib/diagramGeometry';
 import type { Box } from '../lib/diagramGeometry';
 import { Icon } from './Icon';
 import { ImageExport } from './ImageExport';
+import {NodeGlyph} from './NodeGlyph';
+import {isNodeType,PALETTE_MIME,NODE_TYPES} from '../lib/nodeTypes';
+import type {NodeType} from '../lib/nodeTypes';
 interface Props {
   document:Diagram; scenario:number; step:number; selected?:string; readOnly:boolean;
   onSelect:(id:string)=>void; onChange:(document:Diagram)=>void;
   onUndo:()=>void; onRedo:()=>void; canUndo:boolean; canRedo:boolean;
   onPresent?:()=>void; presentation?:boolean;
   onDiscuss?:(nodeId:string)=>void;
+  onAddNode?:(type:NodeType,position:{x:number;y:number})=>void;
 }
 export function Canvas(props:Props){
   const [exportOpen,setExportOpen]=useState(false);
+  const [paletteOver,setPaletteOver]=useState(false);
+  useEffect(()=>{const clear=()=>setPaletteOver(false);window.addEventListener('dragend',clear);window.addEventListener('drop',clear);return()=>{window.removeEventListener('dragend',clear);window.removeEventListener('drop',clear);};},[]);
   const board=useRef<HTMLDivElement>(null);
   const [viewport,setSize]=useState({width:900,height:600});
   const size={width:Math.max(viewport.width,UI.minPlaneWidth),height:props.presentation?Math.max(viewport.height,UI.presentationPlaneHeight):viewport.height};
@@ -79,26 +85,27 @@ export function Canvas(props:Props){
       <div className="tool-group"><button aria-label="Zoom Out" title="Zoom out" disabled={zoom<=minZoom} onClick={()=>changeZoom(Math.max(minZoom,zoom-UI.zoomStep))}><Icon name="minus" size={16}/></button><button className="canvas-scale" aria-label="Reset Zoom" title="Reset zoom to 100%" onClick={()=>{setZoom(1);setPan({x:0,y:0});}}>{Math.round(zoom*100)}%</button><button aria-label="Zoom In" title="Zoom in" disabled={zoom>=UI.maxZoom} onClick={()=>changeZoom(Math.min(UI.maxZoom,zoom+UI.zoomStep))}><Icon name="plus" size={16}/></button><span className="tool-divider"/><button aria-label="Fit Diagram" title="Fit diagram to view" onClick={fit}><Icon name="fit" size={16}/></button></div>
     </div></div>
     <div ref={board} className={'diagram-stage'+(panning?' is-panning':'')} aria-label="Diagram Viewport" onPointerDown={event=>{if(event.button!==0||(event.target as HTMLElement).closest('button'))return;event.currentTarget.setPointerCapture(event.pointerId);panDrag.current={startX:event.clientX,startY:event.clientY,...pan};setPanning(true);}} onPointerMove={event=>{if(panDrag.current)setPan({x:panDrag.current.x+event.clientX-panDrag.current.startX,y:panDrag.current.y+event.clientY-panDrag.current.startY});}} onPointerUp={event=>{panDrag.current=null;setPanning(false);if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);}} onPointerCancel={()=>{panDrag.current=null;setPanning(false);}}>
-      <div className="diagram-plane" style={{width:size.width,height:size.height,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}>
+      <div className="diagram-plane" onDragOver={event=>{if(props.readOnly||!props.onAddNode||!event.dataTransfer.types.includes(PALETTE_MIME))return;event.preventDefault();event.dataTransfer.dropEffect='copy';setPaletteOver(true);}} onDragLeave={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setPaletteOver(false);}} onDrop={event=>{setPaletteOver(false);if(props.readOnly||!props.onAddNode)return;const type=event.dataTransfer.getData(PALETTE_MIME);if(!isNodeType(type))return;event.preventDefault();event.stopPropagation();const bounds=event.currentTarget.getBoundingClientRect();const marginX=nodeWidth/size.width*50,marginY=nodeHeight/size.height*50;props.onAddNode(type,{x:Math.max(marginX,Math.min(100-marginX,(event.clientX-bounds.left)/bounds.width*100)),y:Math.max(marginY,Math.min(100-marginY,(event.clientY-bounds.top)/bounds.height*100))});}} style={{width:size.width,height:size.height,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}>
         <svg id="edges" aria-hidden="true"><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1 7 4 1 7" fill="none" stroke="context-stroke" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></marker></defs><g id="lines">{routes.map(route=><path key={route.key} d={route.path} className={activeEdges.has(route.key)?'active-edge':''}/>)}</g>
           {labels.map(label=><g key={label.key} className="edge-label" transform={`translate(${label.x},${label.y})`}><title>{label.edge.scenarios.join(', ')}</title><rect x={-label.width/2} y={-11} width={label.width} height={22} rx={8}/><text>{label.text}</text></g>)}
         </svg>
         <div id="nodes">{nodes.map(node=>{
           const current=path[props.step]===node.id,selected=!props.readOnly&&props.selected===node.id;
           const outgoing=graph.outgoing.get(node.id)?.size||0;
-          const type=outgoing>1?'decision':!graph.incoming.has(node.id)&&outgoing?'start':!outgoing&&graph.incoming.has(node.id)?'end':'process';
-          return <Fragment key={node.id}><button type="button" aria-label={node.label} title={node.label+' · '+type+' node'} className={'node'+(current?' active':'')+(selected?' selected':'')+(position?.id===node.id?' is-dragging':'')} style={{left:node.x+'%',top:node.y+'%'}} disabled={props.readOnly} aria-pressed={!props.readOnly?selected:undefined}
+          const type=node.type??(outgoing>1?'decision':!graph.incoming.has(node.id)&&outgoing?'start':!outgoing&&graph.incoming.has(node.id)?'end':'process');
+          return <Fragment key={node.id}><button type="button" aria-label={node.label} title={node.label+' · '+(node.type?NODE_TYPES[node.type].label:type)+' node'} className={'node'+(current?' active':'')+(selected?' selected':'')+(position?.id===node.id?' is-dragging':'')} style={{left:node.x+'%',top:node.y+'%'}} disabled={props.readOnly} aria-pressed={!props.readOnly?selected:undefined}
             onClick={()=>{if(!drag.current?.moved)props.onSelect(node.id);}}
             onPointerDown={event=>{if(event.button!==0||props.readOnly)return;event.stopPropagation();event.currentTarget.setPointerCapture(event.pointerId);drag.current={id:node.id,startX:event.clientX,startY:event.clientY,x:node.x,y:node.y,moved:false};}}
             onPointerMove={event=>{const start=drag.current;if(!start||start.id!==node.id||!event.currentTarget.hasPointerCapture(event.pointerId))return;const dx=(event.clientX-start.startX)/zoom,dy=(event.clientY-start.startY)/zoom;if(!start.moved&&Math.hypot(dx,dy)<UI.dragThreshold)return;start.moved=true;const marginX=nodeWidth/2/size.width*100,marginY=nodeHeight/2/size.height*100;setPosition({id:node.id,x:Math.max(marginX,Math.min(100-marginX,start.x+dx*100/size.width)),y:Math.max(marginY,Math.min(100-marginY,start.y+dy*100/size.height))});}}
             onPointerUp={event=>{if(drag.current?.id!==node.id)return;if(drag.current.moved&&position){props.onChange({...props.document,nodes:props.document.nodes.map(n=>n.id===node.id?{...n,x:position.x,y:position.y}:n)});props.onSelect(node.id);}if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);setPosition(null);}}
             onPointerCancel={()=>{drag.current=null;setPosition(null);}}>
-            <span className={'node-type '+type} aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">{type==='decision'?<path d="m8 2 6 6-6 6-6-6Z"/>:type==='start'?<path d="m6 4 6 4-6 4Z"/>:type==='end'?<><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></>:<rect x="3" y="3" width="10" height="10" rx="2"/>}</svg></span>
+            <span className={'node-type '+type} aria-hidden="true" title={node.type?NODE_TYPES[node.type].label:undefined}><NodeGlyph kind={type}/></span>
             <span className="node-label">{node.label}</span>{current&&<i className="current-dot" aria-hidden="true"/>}{selected&&Array.from({length:4},(_,i)=><i key={i} className="selection-handle" aria-hidden="true"/>)}
           </button>{props.onDiscuss&&!props.presentation&&<button className="comment-pin" aria-label={'Comments for '+node.label} title={'Discuss '+node.label} style={{left:node.x+'%',top:node.y+'%'}} onClick={event=>{event.stopPropagation();props.onDiscuss?.(node.id);}}><Icon name="comment" size={16}/></button>}</Fragment>;
         })}</div>
       </div>
     </div>
+    {paletteOver&&!props.readOnly&&<div className="palette-drop-hint">Drop to Add Component</div>}
     {!nodes.length&&<div className="empty-canvas"><strong>{props.presentation?'No nodes to present.':'Your next explanation starts here.'}</strong><p>{props.presentation?'Exit presentation to add nodes and build a scenario.':'Add a node, then build a scenario.'}</p></div>}
     <div className="canvas-legend"><span><i className="legend-active"/>Current step</span>{!props.readOnly&&<span><i className="legend-selected"/>Selected node</span>}</div>
     {!!nodes.length&&<button className="minimap" aria-label="Fit Diagram from Minimap" title="Diagram overview · Click to fit" onClick={fit}><svg viewBox={`0 0 ${size.width} ${size.height}`} aria-hidden="true">{routes.map(route=><path key={route.key} d={route.path} fill="none" stroke="var(--edge)" strokeWidth="4"/>)}{boxes.map(box=><rect key={box.id} className={'minimap-node'+(path[props.step]===box.id?' current':'')} x={box.x-box.width/2} y={box.y-box.height/2} width={box.width} height={box.height} rx={12}/>)}<rect className="minimap-viewport" x={-pan.x/zoom} y={-pan.y/zoom} width={viewport.width/zoom} height={viewport.height/zoom} rx={8}/></svg></button>}
