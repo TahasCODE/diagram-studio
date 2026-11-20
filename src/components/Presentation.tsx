@@ -26,7 +26,7 @@ export function Presentation(props:Props){
   },[]);
   useEffect(()=>{
     const navigate=(event:KeyboardEvent)=>{
-      if(event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||(event.target as HTMLElement).closest('input,textarea,select,[contenteditable]'))return;
+      if(event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||(event.target as HTMLElement).closest('input,textarea,select,[contenteditable]')||globalThis.document.querySelector('dialog[open] dialog[open]'))return;
       const target=event.key==='ArrowRight'?props.step+1:event.key==='ArrowLeft'?props.step-1:event.key==='Home'?0:null;
       if(target!==null){event.preventDefault();props.onStep(target);}
     };

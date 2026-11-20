@@ -56,7 +56,7 @@ export function WorkspaceShell(props: Props) {
         </div>
         {compact&&inspectorOpen&&<button className="inspector-backdrop" aria-label="Close Inspector Backdrop" tabIndex={-1} onClick={()=>setInspectorOpen(false)}/>}
         <aside ref={inspector} id="diagram-inspector" className={'inspector'+(inspectorOpen?' is-open':'')} role={compact&&inspectorOpen?'dialog':undefined} aria-modal={compact&&inspectorOpen?true:undefined} aria-label="Diagram Controls" inert={compact&&!inspectorOpen} onTransitionEnd={event=>{if(event.target===event.currentTarget&&compact&&inspectorOpen&&!inspector.current?.contains(document.activeElement))inspector.current?.querySelector<HTMLButtonElement>('.inspector-close')?.focus();}} onKeyDown={event=>{
-          if(!compact||!inspectorOpen)return;
+          if(!compact||!inspectorOpen||(event.target as HTMLElement).closest('dialog'))return;
           if(event.key==='Escape'){event.preventDefault();setInspectorOpen(false);}
           if(event.key==='Tab'){
             const controls=[...inspector.current!.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')].filter(el=>el.getClientRects().length);

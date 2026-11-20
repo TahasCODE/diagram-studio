@@ -1,14 +1,17 @@
 import type { Diagram } from '../lib/model';
 import { Icon } from './Icon';
+import {useState} from 'react';
+import {ScenarioComparison} from './ScenarioComparison';
 export interface GuidedPlayback {
   started:boolean; chosen:boolean; choiceStep:number;
   onStart:()=>void; onChoose:(scenario:number)=>void; onRestart:()=>void;
 }
 export function Playback({document, scenario, step, readOnly, onScenario, onStep, guided}: {
   document: Diagram; scenario: number; step: number; readOnly: boolean;
-  onScenario: (index: number) => void; onStep: (index: number) => void;
+  onScenario: (index: number,step?:number) => void; onStep: (index: number) => void;
   guided?:GuidedPlayback;
 }) {
+  const [comparing,setComparing]=useState(false);
   const current = document.scenarios[scenario];
   const byId = new Map(document.nodes.map(n => [n.id,n]));
   const active = byId.get(current.steps[step]);
@@ -16,6 +19,8 @@ export function Playback({document, scenario, step, readOnly, onScenario, onStep
   if(guided&&!guided.started)return <section className="walkthrough-intro"><p className="section-overline">INTERACTIVE WALKTHROUGH</p><h2>A cache failure. Two different outcomes.</h2><p className="hint">Follow one read request through an API, Redis and PostgreSQL. When Redis fails, you decide how the API responds.</p><p className="reader-context">Illustrative scenario, not a live Redis outage or a benchmark. Any timing figures are illustrative.</p><button className="primary full-width" onClick={guided.onStart}><Icon name="play" size={16}/>Start Walkthrough</button><p className="hint">No account needed. Your local draft stays unchanged.</p><a href="/">Back to Workspace</a></section>;
   return <section className="playback-panel"><div className="section-heading"><h2>Scenario Playback</h2><span className="section-tag">{document.scenarios.length} paths</span></div><p className="hint">Follow a path through your system, one step at a time.</p>
     {!guided&&<><label htmlFor="scenario">Active Scenario</label><select id="scenario" value={scenario} onChange={e => onScenario(Number(e.target.value))}>{document.scenarios.map((s,i) => <option value={i} key={i}>{s.name}{!readOnly && s.review?.length ? ' — Needs Review' : ''}</option>)}</select></>}
+    {!guided&&<><button className="full-width" disabled={document.scenarios.length<2} onClick={()=>setComparing(true)}><Icon name="branch" size={15}/>Compare Scenarios</button>{document.scenarios.length<2&&<p className="hint">Add another scenario to compare paths.</p>}</>}
+    {comparing&&document.scenarios.length>=2&&<ScenarioComparison document={document} initialScenario={scenario} onClose={()=>setComparing(false)} onExplore={(index,target)=>{onScenario(index,target);setComparing(false);}}/>}
     {guided&&<p className="walkthrough-context">Illustrative walkthrough · {guided.chosen?current.name:'Choose at the cache failure'}</p>}
     {current.description&&(!guided||guided.chosen)&&<p className="reader-context">{current.description}</p>}
     <p id="step" aria-live="polite"><span className="step-card-meta"><span aria-hidden="true">{active?'CURRENT STEP':'PLAYBACK'}</span>{active&&<span className="step-card-count">{step+1} / {current.steps.length}</span>}</span>{active?<strong className="step-card-title">{active.label}</strong>:<span>This scenario has no steps yet.</span>}</p>
