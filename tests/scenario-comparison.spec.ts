@@ -1,0 +1,47 @@
+import {test,expect} from '@playwright/test';
+const document={title:'Cache choices',nodes:[{id:'api',label:'API',type:'api',x:20,y:50},{id:'cache',label:'Redis',type:'cache',x:50,y:50},{id:'db',label:'PostgreSQL',type:'database',x:80,y:50,notes:'Fallback reads use database capacity.'}],scenarios:[{name:'Temporary error',steps:['api','cache']},{name:'Database fallback',steps:['api','cache','db','api'],description:'Return data while the cache is unavailable.'},{name:'Empty',steps:[]}]};
+for(const width of [1440,1024,390])test(`guest compares paths without editing the shared snapshot at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route(/^https:\/\/fonts\./,r=>r.abort());
+ await page.goto('/#'+encodeURIComponent(JSON.stringify(document)));
+ if(width<1024)await page.getByRole('button',{name:'Open Inspector',exact:true}).click();
+ await page.getByRole('button',{name:'Compare Scenarios',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Compare Scenarios',exact:true});await expect(dialog).toBeVisible();
+ await expect(dialog).toContainText('First difference at step 3.');await expect(dialog).toContainText('2 shared nodes');
+ await dialog.getByRole('button',{name:'Jump to Difference',exact:true}).click();
+ await expect(dialog.getByRole('region',{name:'Path A',exact:true})).toBeVisible();
+ await expect(dialog.locator('[aria-label="Path A"] .comparison-current')).toContainText('PATH FINISHED');
+ await expect(dialog.locator('[aria-label="Path B"] .comparison-current')).toContainText('PostgreSQL');
+ await expect(dialog.locator('[aria-label="Path B"] .comparison-current')).toContainText('Fallback reads');
+ await dialog.getByRole('button',{name:'Next Pair',exact:true}).click();await expect(dialog).toContainText('Position 4 of 4');
+ await dialog.getByRole('button',{name:'Restart Comparison',exact:true}).click();await expect(dialog).toContainText('Position 1 of 4');
+ await dialog.getByRole('button',{name:'Path B, step 4: API',exact:true}).click();
+ await page.screenshot({path:`.runtime/scenario-comparison-${width}-light.png`});
+ await page.evaluate(()=>globalThis.document.documentElement.dataset.theme='dark');await page.screenshot({path:`.runtime/scenario-comparison-${width}-dark.png`});
+ expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
+ await dialog.getByRole('button',{name:'Open Path B in Playback',exact:true}).click();
+ await expect(dialog).toHaveCount(0);await expect(page.locator('#scenario')).toHaveValue('1');await expect(page.locator('#step')).toContainText('4 / 4');
+ await page.getByRole('button',{name:'Compare Scenarios',exact:true}).click();
+ await page.locator('#compare-path-B').selectOption('2');await expect(dialog.locator('[aria-label="Path B"]')).toContainText('No steps in this scenario.');
+ await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Compare Scenarios',exact:true})).toBeFocused();
+ await expect(page.getByRole('tab',{name:'Editor',exact:true})).toHaveCount(0);
+ expect(decodeURIComponent(new URL(page.url()).hash.slice(1))).toBe(JSON.stringify(document));
+});
+test('a single scenario offers a disabled comparison entry',async({page})=>{
+ await page.goto('/#'+encodeURIComponent(JSON.stringify({...document,scenarios:[document.scenarios[0]]})));
+ await expect(page.getByRole('button',{name:'Compare Scenarios',exact:true})).toBeDisabled();
+});
+test('comparison closes without exiting presentation or advancing its background player',async({page})=>{
+ await page.route(/^https:\/\/fonts\./,r=>r.abort());
+ await page.goto('/#'+encodeURIComponent(JSON.stringify(document)));
+ await page.getByRole('button',{name:'Present Diagram',exact:true}).click();
+ const presentation=page.locator('dialog.presentation');
+ await presentation.getByRole('button',{name:'Compare Scenarios',exact:true}).click();
+ const comparison=page.getByRole('dialog',{name:'Compare Scenarios',exact:true});
+ await comparison.getByRole('button',{name:'Jump to Difference',exact:true}).click();
+ await page.keyboard.press('ArrowRight');
+ await page.keyboard.press('Escape');await expect(comparison).toHaveCount(0);
+ await expect(presentation).toBeVisible();await expect(presentation.locator('#step')).toContainText('1 / 2');
+ await presentation.getByRole('button',{name:'Exit Presentation',exact:true}).click();await expect(presentation).toHaveCount(0);
+});

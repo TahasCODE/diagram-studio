@@ -196,7 +196,7 @@ export default function App() {
     window.addEventListener('beforeunload',warn); return () => window.removeEventListener('beforeunload',warn);
   }, [localSaved,readOnly]);
 
-  const onScenario = (index: number) => { setScenario(index); setStep(0); };
+  const onScenario = (index: number,target=0) => { setScenario(index); setStep(Math.max(0,target)); };
   const goToStep=useCallback((index:number)=>{
     if(walkthroughMode&&!walkthroughStarted)return;
     const last=walkthroughMode&&!walkthroughChosen?CACHE_CHOICE_STEP:document.scenarios[scenario].steps.length-1;

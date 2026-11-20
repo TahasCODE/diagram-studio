@@ -9,6 +9,10 @@ The [visual component palette](docs/node-palette.md) adds Client, API, Service,
 Database, Cache, Queue and Decision nodes by click or canvas drop. Component types
 stay with the diagram through saves, remixing and exports; old diagrams still work.
 
+Use **Playback → Compare Scenarios** to inspect two ordered paths side by side,
+jump to their first difference, and open either path in the existing player.
+[Scenario comparison](docs/scenario-comparison.md) works without an account.
+
 **[Try the live walkthrough](https://diagram-studio-demo.onrender.com/?walkthrough=cache-outage)**
 | [Open the editor](https://diagram-studio-demo.onrender.com/)
 | [Watch the 86-second demo](https://diagram-studio-demo.onrender.com/demo.html)
